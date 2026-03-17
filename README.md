@@ -20,19 +20,19 @@ This installs dependencies for root and frontend.
 Create a `.env` file in the project root:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/reading_habit_tracker
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/turn_the_page
 PORT=3001
 ```
 
 Important:
 - Replace `postgres:postgres` with your PostgreSQL username/password
-- If you have no password, use `DATABASE_URL=postgresql://postgres@localhost:5432/reading_habit_tracker`
+- If you have no password, use `DATABASE_URL=postgresql://postgres@localhost:5432/turn_the_page`
 - The file must be named exactly `.env` (it is gitignored)
 
 ### 4. Create the database
 
 ```bash
-psql -U postgres -c "CREATE DATABASE reading_habit_tracker;"
+psql -U postgres -c "CREATE DATABASE turn_the_page;"
 ```
 
 Replace `postgres` with your PostgreSQL username if different.
@@ -43,6 +43,13 @@ Apply schema + seed data:
 
 ```bash
 npm run db:migrate
+```
+
+If you get errors about `users.user_id` missing, your `DATABASE_URL` is likely pointing to an older DB schema.
+Either switch `DATABASE_URL` to a fresh DB (for example `turn_the_page`) or run:
+
+```bash
+npm run db:reset
 ```
 
 Or run each step individually:

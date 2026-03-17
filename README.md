@@ -1,8 +1,8 @@
 ### 1. Clone the repository
 
 ```
-git clone <REPOSITORY_URL>
-cd march-madness-app
+git clone https://github.com/Gavincli/TurnThePage.git
+cd my-app
 ```
 
 ### 2. Navigate to the frontend

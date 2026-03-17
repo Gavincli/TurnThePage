@@ -16,6 +16,30 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
+legacy_users_id_exists=$(psql "$DATABASE_URL" -tA -c "SELECT EXISTS (
+  SELECT 1
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = 'users'
+    AND column_name = 'id'
+);")
+
+new_users_user_id_exists=$(psql "$DATABASE_URL" -tA -c "SELECT EXISTS (
+  SELECT 1
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = 'users'
+    AND column_name = 'user_id'
+);")
+
+if [ "$legacy_users_id_exists" = "t" ] && [ "$new_users_user_id_exists" = "f" ]; then
+  echo "Detected older schema in target database (users.id without users.user_id)."
+  echo "Either:"
+  echo "  1) Point DATABASE_URL to a fresh DB, or"
+  echo "  2) Run npm run db:reset to rebuild this DB with current migrations."
+  exit 1
+fi
+
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_initial_schema.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_seed_data.sql
 

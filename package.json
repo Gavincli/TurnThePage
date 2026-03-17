@@ -1,0 +1,11 @@
+{
+  "name": "turn-the-page",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "install:all": "npm install && npm --prefix frontend install",
+    "db:migrate": "bash ./scripts/db-migrate.sh",
+    "db:seed": "bash ./scripts/db-seed.sh",
+    "db:reset": "bash ./scripts/db-reset.sh"
+  }
+}

@@ -6,7 +6,7 @@ import Goals from './pages/Goals'
 import ReadNow from './pages/ReadNow'
 import LogReading from './pages/LogReading'
 import Shop from './pages/Shop'
-
+import Friends from './pages/Friends'
 
 function App() {
   return (
@@ -18,6 +18,7 @@ function App() {
           <Route path="/read-now" element={<ReadNow />} />
           <Route path="/log-reading" element={<LogReading />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/friends" element={<Friends />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

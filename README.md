@@ -79,6 +79,40 @@ Migration files live in `db/migrations/` and are safe to re-run (`IF NOT EXISTS`
 npm --prefix frontend run dev
 ```
 
+### 7. Start the backend API
+
+The backend API runs separately from the frontend and exposes goal endpoints.
+
+```bash
+npm run backend
+```
+
+- Health check (sanity test):
+
+  ```bash
+  curl http://localhost:4000/health
+  ```
+
+- Fetch goals for the seeded test user:
+
+  ```bash
+  curl "http://localhost:4000/api/goals?userId=11111111-1111-1111-1111-111111111111"
+  ```
+
+- Log a reading session (no frontend required yet):
+
+  ```bash
+  curl -X POST http://localhost:4000/api/sessions \
+    -H "Content-Type: application/json" \
+    -d '{
+      "userId": "11111111-1111-1111-1111-111111111111",
+      "minutesRead": 15,
+      "sessionDate": "2026-03-18"
+    }'
+  ```
+
+This endpoint is designed to be testable with curl/Postman first. A future Log Reading page will call it from the frontend.
+
 ## Project Structure
 
 ```text
@@ -87,6 +121,7 @@ TurnThePage
 ├── db/
 │   └── migrations/   # SQL migrations (schema + seed)
 ├── frontend/         # React + Vite frontend
+├── backend/          # Express API + Postgres (goals and sessions)
 └── scripts/          # DB helper scripts used by npm commands
 ```
 

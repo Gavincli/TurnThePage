@@ -7,8 +7,6 @@ Ideas:
 - Remove "Daily tip" card from Goals page to keep the screen focused on progress and goals only.
 - Remove/relocate "Currently reading" card from Goals page (move to Home or Read Now) so Goals stays about achievements, not book navigation.
 - Keep Goals page as a calm "dashboard":
-  - Show streak, summary stats, and goal cards only.
-  - Completed goals at the bottom, with subtle styling (checkmark, soft green background, 100% bar).
 
 Log Reading page design
 -----------------------

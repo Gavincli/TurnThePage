@@ -7,6 +7,7 @@ import ReadNow from './pages/ReadNow'
 import LogReading from './pages/LogReading'
 import Shop from './pages/Shop'
 import Friends from './pages/Friends'
+import AvatarSelect from './pages/AvatarSelect'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/log-reading" element={<LogReading />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/friends" element={<Friends />} />
+          <Route path="/avatar" element={<AvatarSelect />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

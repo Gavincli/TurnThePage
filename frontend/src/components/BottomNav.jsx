@@ -16,22 +16,21 @@ const BottomNav = () => {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-neutral-200/80 safe-area-pb">
-      <div className="max-w-lg mx-auto px-4 py-2 flex justify-around items-center">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200/80 bg-white/90 backdrop-blur-xl safe-area-pb md:hidden">
+      <div className="mx-auto flex max-w-lg items-center justify-around px-4 py-2">
         {navItems.map(({ path, label, labelShort, icon }) => (
           <button
             key={path}
             onClick={() => navigate(path)}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors min-w-[56px] ${
+            className={`flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-3 py-2 transition-colors ${
               isActive(path)
-                ? 'text-[#007AFF]'
+                ? 'text-[#4f46e5]'
                 : 'text-neutral-500 hover:text-neutral-700'
             }`}
           >
             <span className="text-[22px] leading-none">{icon}</span>
             <span className="text-[10px] font-medium">
-              <span className="sm:hidden">{labelShort || label}</span>
-              <span className="hidden sm:inline">{label}</span>
+              {labelShort || label}
             </span>
           </button>
         ))}

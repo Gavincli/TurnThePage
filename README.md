@@ -39,7 +39,7 @@ Replace `postgres` with your PostgreSQL username if different.
 
 ### 5. Run migrations
 
-Apply schema + seed data:
+Apply all migrations (001 + 002 + 003):
 
 ```bash
 npm run db:migrate
@@ -55,23 +55,24 @@ npm run db:reset
 Or run each step individually:
 
 ```bash
-# Schema + seed
+# Full migration chain (001 schema, 002 seed, 003 goals/sessions tables + seed)
 npm run db:migrate
 
-# Seed only
+# Seed only (re-runs 002 seed data)
 npm run db:seed
 
-# Full reset (drops public schema, recreates, and seeds)
+# Full reset (drops public schema, then re-runs 001 + 002 + 003)
 npm run db:reset
 ```
 
 Migration files live in `db/migrations/` and are safe to re-run (`IF NOT EXISTS` and `ON CONFLICT` guards).
+`db:migrate` and `db:reset` include `003_goals_and_sessions.sql`, which creates `goal_templates`, `reading_sessions`, and `user_goals`.
 
 | Script | What it does |
 |--------|-------------|
-| `npm run db:migrate` | Runs schema and seed migrations |
-| `npm run db:seed` | Inserts seed data only |
-| `npm run db:reset` | Drops public schema, recreates schema, and seeds |
+| `npm run db:migrate` | Runs 001 + 002 + 003 migrations |
+| `npm run db:seed` | Runs 002 seed data only |
+| `npm run db:reset` | Drops public schema, then runs 001 + 002 + 003 |
 
 ### 6. Start the frontend
 

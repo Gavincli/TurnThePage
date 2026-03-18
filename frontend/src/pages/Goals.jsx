@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
+import confetti from 'canvas-confetti'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -17,7 +18,8 @@ const getGreeting = () => {
 
 const Goals = () => {
   const navigate = useNavigate()
-  const { goalProgress, goalsCompleted, currentStreak, currentReading } = useApp()
+  const { goalProgress, setGoalProgress, goalsCompleted, currentStreak, currentReading } = useApp()
+  const [minutesRead, setMinutesRead] = useState(10)
 
   const today = new Date()
   const dateStr = `${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}`
@@ -97,7 +99,8 @@ const Goals = () => {
             Daily goals
           </p>
           <div className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-neutral-100">
-            {goalProgress.map((goal) => {
+            {([...goalProgress].sort((a, b) => Number(a.completed) - Number(b.completed))).map((goal) => {
+              const clampedCurrent = goal.completed && goal.target ? goal.target : goal.current
               const progress = goal.target ? Math.min((goal.current / goal.target) * 100, 100) : 0
               return (
                 <div
@@ -122,13 +125,19 @@ const Goals = () => {
                       </p>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[13px] text-neutral-500 tabular-nums">
-                          {goal.current}/{goal.target}
+                          {clampedCurrent}/{goal.target}
                         </span>
                         {goal.completed && (
                           <span className="text-[11px] font-medium text-emerald-600">Done</span>
                         )}
                       </div>
                     </div>
+                    {goal.description && (
+                      <p className="mt-1 text-[12px] md:text-[13px] text-neutral-500 flex items-center gap-1">
+                        <span>{goal.description}</span>
+                        <ReadAloud text={goal.description} size="xs" />
+                      </p>
+                    )}
                     <div className="mt-2 h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
@@ -144,15 +153,83 @@ const Goals = () => {
           </div>
         </section>
 
-        {/* Primary action */}
-        <button
-          onClick={() => navigate('/log-reading')}
-          className="w-full bg-[#007AFF] hover:bg-[#0066D6] active:scale-[0.98] text-white rounded-xl py-4 md:py-5 text-[17px] font-semibold transition-all flex items-center justify-center gap-3"
+        {/* Primary action — minimal log session form that talks to the backend */}
+        <form
+          className="w-full bg-[#007AFF] hover:bg-[#0066D6] active:scale-[0.98] text-white rounded-xl py-3 md:py-4 px-4 text-[17px] font-semibold transition-all flex items-center justify-between gap-3 mb-4"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            try {
+              const res = await fetch('http://localhost:4000/api/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: '11111111-1111-1111-1111-111111111111',
+                  minutesRead: Number(minutesRead),
+                  sessionDate: new Date().toISOString().slice(0, 10),
+                }),
+              })
+              const data = await res.json()
+
+              if (!res.ok) {
+                // eslint-disable-next-line no-console
+                console.error('Failed to log session', data)
+                return
+              }
+
+              const goals = data.goals || []
+
+              // Update local goalProgress from backend response so cards reflect real state.
+              const mapped = goals.map((g, index) => ({
+                id: index + 1,
+                name: g.title,
+                description: g.description,
+                current: g.progress,
+                target: g.target,
+                completed: g.isCompleted,
+                icon: '📖',
+              }))
+              setGoalProgress(mapped)
+
+              if (data.newlyCompleted && data.newlyCompleted.length > 0) {
+                const names = data.newlyCompleted.map((g) => g.title).join(', ')
+                // Quick confetti burst to celebrate newly completed goals.
+                confetti({
+                  particleCount: 120,
+                  spread: 70,
+                  origin: { y: 0.6 },
+                })
+                // Simple in-browser message; can be replaced with a nicer toast later.
+                // eslint-disable-next-line no-alert
+                alert(`Goal completed: ${names}`)
+              }
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error('Error calling /api/sessions', err)
+            }
+          }}
         >
-          <span className="text-xl">✏️</span>
-          Log Reading
-          <ReadAloud text="Log Reading" />
-        </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xl">✏️</span>
+            <span>Log Reading</span>
+            <ReadAloud text="Log Reading" />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              value={minutesRead}
+              onChange={(e) => setMinutesRead(e.target.value)}
+              className="w-20 rounded-lg px-2 py-1 text-[15px] text-neutral-900"
+            />
+            <span className="text-[14px] font-medium">min</span>
+            <button
+              type="submit"
+              className="ml-2 bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 text-[14px] font-semibold"
+            >
+              Save
+            </button>
+          </div>
+        </form>
 
         {/* Secondary cards — book, tip, week */}
         <div className="mt-6 md:mt-8 space-y-4">

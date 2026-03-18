@@ -3,6 +3,7 @@ Sprint 2+ Ideas / UX Notes
 
 Goals page cleanup
 ------------------
+Ideas:
 - Remove "Daily tip" card from Goals page to keep the screen focused on progress and goals only.
 - Remove/relocate "Currently reading" card from Goals page (move to Home or Read Now) so Goals stays about achievements, not book navigation.
 - Keep Goals page as a calm "dashboard":
@@ -43,5 +44,21 @@ Accessibility / read-aloud
   - Goal titles.
   - Goal descriptions (what the goal means).
   - Primary actions (e.g., "Log Reading" button label).
-- Consider a global setting later: "Read aloud goals automatically" for users who rely heavily on audio.
 
+Home vs Goals layout
+--------------------
+- Move the following cards off the Goals page and onto the Home/front page:
+  - Reading streak
+  - Today’s progress
+  - This week
+  - Daily tip
+  - Currently reading
+- Goals page should focus purely on structured goals and their progress/completion.
+- Home/front page becomes the “overall reading dashboard”; Goals is the “achievements” view.
+
+Why separate Home, Goals, and Log Reading
+
+Home/front page is the overall reading dashboard: streak, today’s progress, this week, daily tip, currently reading, and total minutes/books. Answers “How am I doing as a reader right now?”
+Goals page is the achievements view: list of structured goals (title, description, progress, completion), with active vs completed clearly grouped. Answers “What goals do I have and which are done?”
+Log Reading page = input + reward flow: log time/pages/date (and “finished this book”), then see “Goal completed + points earned”. Answers “I just read; let me record it and see what I unlocked.”
+This separation keeps Goals from becoming too complex and gives each screen one clear job (Home = status, Goals = achievements, Log Reading = input + reward).

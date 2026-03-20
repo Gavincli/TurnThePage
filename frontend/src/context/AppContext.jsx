@@ -8,7 +8,7 @@ export const AppProvider = ({ children }) => {
   const [booksFinished] = useState(12)
   const [goalsCompleted, setGoalsCompleted] = useState(0)
   const [currentReading] = useState('The Hobbit')
-
+// GUYS THIS IS  JUST AN EXMAPLES ..... THESE GOALS ARE NOT REAL, THE REAL GOALS WILL COME FROM THE BACKEND
   // Goals should ultimately come from the backend/database.
   // For now, we keep example goals here as a fallback so the UI can show
   // the expected structure for daily, weekly, and monthly goals.

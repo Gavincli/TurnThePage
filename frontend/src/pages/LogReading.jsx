@@ -3,7 +3,7 @@ import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 
 const quickMinutes = [10, 20, 30, 45]
-
+// I JUST IMPLEMENTED THE POSSIBLE DESIGN. BUT THIS IS NOT HOW THE LOG PAE SHOULD BE, YOU CAN MAKE IT MORE COMPLETE AND BETTER
 const LogReading = () => {
   const [minutesRead, setMinutesRead] = useState(10)
   const [notes, setNotes] = useState('')

@@ -2,72 +2,48 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import Avatar from '../components/Avatar'
-import BottomNav from '../components/BottomNav'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
+import BottomNav from '../components/BottomNav'
 
-const StatCard = ({ label, value, accent, readText, icon, iconBg }) => {
-  const accentMap = {
-    amber: 'border-amber-200/80 bg-white',
-    emerald: 'border-emerald-200/80 bg-white',
-    blue: 'border-blue-200/80 bg-white',
-    violet: 'border-violet-200/80 bg-white',
-  }
-
+const InlineStat = ({ label, value, icon, readText }) => {
   return (
-    <div
-      className={`rounded-3xl border p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] ${accentMap[accent]}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg shadow-sm ${iconBg}`}
-          >
-            {icon}
-          </div>
-          <p className="text-sm font-medium leading-tight text-slate-500">
-            {label}
-          </p>
-        </div>
-
-        <div className="shrink-0 pt-0.5">
-          <ReadAloud text={readText} size="xs" />
-        </div>
+    <div className="flex items-center gap-2.5 sm:gap-3 transition duration-200 hover:-translate-y-0.5" aria-label={readText}>
+      <div className="text-[#2b2724] opacity-80 flex shrink-0 drop-shadow-sm">
+        {icon}
       </div>
-
-      <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
-        {value}
-      </p>
+      <div className="flex items-baseline gap-1.5 sm:gap-2 border-b border-transparent">
+        <p className="text-3xl sm:text-4xl font-serif text-[#2b2724] font-medium tracking-tight">
+          {value}
+        </p>
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[#2b2724] opacity-80">
+          {label}
+        </p>
+      </div>
     </div>
   )
 }
 
-const ResourceCard = ({ href, icon, title, subtitle, readText }) => {
+const ResourceCard = ({ href, icon, title, readText }) => {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="group rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
+      className="group flex flex-col justify-between rounded-3xl border border-[#e6e2db] bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">
-            {icon}
-          </div>
-          <div>
-            <h4 className="text-base font-semibold leading-tight text-slate-900">
-              {title}
-            </h4>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              {subtitle}
-            </p>
-          </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f5efe6] text-[#9c7846] text-xl">
+          {icon}
         </div>
-
         <div className="shrink-0 pt-0.5">
           <ReadAloud text={readText} size="xs" />
         </div>
+      </div>
+      <div>
+        <h4 className="mt-4 text-lg font-serif font-medium leading-tight text-[#2b2724]">
+          {title}
+        </h4>
       </div>
     </a>
   )
@@ -84,244 +60,220 @@ const Home = () => {
   } = useApp()
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.12),_transparent_28%),linear-gradient(to_bottom,_#f8fafc,_#eef2ff)] pb-24 md:pb-6">
-      <header className="sticky top-0 z-20 border-b border-white/60 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-24 md:pb-12 font-sans">
+      <header className="sticky top-0 z-20 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400">
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#8a8178]">
               Turn The Page
             </p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-900">
-              Welcome back
-              <ReadAloud text="Welcome back" />
+            <h1 className="mt-0.5 flex items-center gap-2 text-3xl font-serif font-medium tracking-tight text-[#2b2724]">
+              Home
+              <ReadAloud text="Home" size="sm" />
             </h1>
+            <p className="mt-1 text-xs sm:text-sm font-medium text-[#8a8178]">
+              {new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).format(new Date())}
+            </p>
           </div>
           <HamburgerMenu />
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-6 lg:px-8 lg:pt-6">
-        <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr] xl:gap-6">
-          <div className="space-y-5">
-            <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6 lg:min-h-[290px]">
-              <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-indigo-100/90 blur-3xl" />
-              <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-sky-100/80 blur-3xl" />
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,255,255,0.18))]" />
+      <main className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
+        <div className="space-y-12">
+          
+          {/* Top Dashboard Row */}
+          <section className="grid gap-6 md:grid-cols-12 md:grid-rows-1">
+            
+            {/* Habit / Overview Panel (Takes 7/12 on large screens) */}
+            <div className="relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-6 md:col-span-7 lg:col-span-8 lg:p-8 shadow-sm">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
+              
+              {/* Soft background illustration */}
+              <div className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply transition-opacity duration-700 sm:opacity-50">
+                <img 
+                  src="/library.png" 
+                  alt="" 
+                  className="h-full w-full object-cover object-[center_20%]"
+                  style={{ maskImage: 'linear-gradient(to right, transparent 10%, black 80%)', WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)' }}
+                />
+              </div>
 
-              <div className="relative flex h-full flex-col justify-between">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="max-w-2xl">
-                    <p className="text-sm font-medium text-slate-500">
-                      Your reading journey
-                    </p>
-                    <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-slate-900 lg:text-[2.2rem] lg:leading-[1.05]">
-                      Keep building your habit, one page at a time.
-                    </h2>
-                    <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                      Track progress, stay consistent, and make reading feel simple,
-                      structured, and motivating every day.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => navigate('/avatar')}
-                    className="shrink-0 self-start rounded-[1.5rem] border border-white/70 bg-white/70 p-2.5 shadow-[0_8px_20px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(15,23,42,0.10)]"
-                    aria-label="Choose avatar"
-                  >
-                    <Avatar size="lg" />
-                  </button>
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#8a8178]">
+                    My Habit
+                  </p>
+                  <h2 className="mt-1 text-3xl font-serif font-medium leading-tight tracking-tight text-[#2b2724]">
+                    Read every day.
+                  </h2>
                 </div>
 
-                <div className="mt-5 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-                  <div className="rounded-[1.6rem] bg-slate-950 px-5 py-4 text-white shadow-[0_16px_34px_rgba(2,6,23,0.24)]">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.22em] text-slate-300">
-                          Current streak
-                        </p>
-                        <p className="mt-2 text-3xl font-semibold">
-                          {currentStreak} day{currentStreak === 1 ? '' : 's'}
-                        </p>
-                      </div>
-                      <div className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-slate-100">
-                        Keep going
-                      </div>
+                <button
+                  onClick={() => navigate('/avatar')}
+                  className="shrink-0 self-start rounded-full border border-[#e8e4db] bg-[#fbf9f5] p-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  aria-label="Choose avatar"
+                >
+                  <Avatar size="md" />
+                </button>
+              </div>
+
+              <div className="relative mt-8 rounded-[1.4rem] bg-[#3f3b39]/60 backdrop-blur-md px-6 py-5 text-[#fcfbfa] shadow-lg border border-white/10 overflow-hidden z-10">
+                <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#f5efe6]/20 blur-2xl" />
+                <div className="flex flex-row items-center justify-between gap-4">
+                  
+                  {/* Streak Compact Badge */}
+                  <div className="relative z-10 flex flex-col items-center justify-center pl-2">
+                    <div className="flex flex-col items-center drop-shadow-md">
+                      <svg width="38" height="38" viewBox="0 0 24 24" fill="url(#flame-gradient)" stroke="url(#flame-gradient)" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-sm">
+                        <defs>
+                          <linearGradient id="flame-gradient" x1="0" y1="1" x2="0" y2="0">
+                            <stop offset="0%" stopColor="#f43f5e" /> {/* Rose-500 */}
+                            <stop offset="50%" stopColor="#f97316" /> {/* Orange-500 */}
+                            <stop offset="100%" stopColor="#fbbf24" /> {/* Amber-400 */}
+                          </linearGradient>
+                        </defs>
+                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                      </svg>
+                      <p className="mt-0.5 text-5xl font-serif text-white font-bold leading-none">
+                         {currentStreak}
+                      </p>
                     </div>
-                    <div className="mt-2">
+                    <p className="mt-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-white/80 drop-shadow-sm">
+                      Day Streak
+                    </p>
+                    <div className="mt-1">
                       <ReadAloud text={`Current streak: ${currentStreak} days`} size="xs" />
                     </div>
                   </div>
 
-                  <div className="rounded-[1.6rem] border border-white/70 bg-white/70 px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Reading focus
-                    </p>
-                    <p className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
-                      {currentReading || 'Choose your next book'}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      {currentReading
-                        ? 'Stay with your current book and keep the momentum going.'
-                        : 'Pick a title and begin your next reading session.'}
-                    </p>
+                  {/* Action Buttons */}
+                  <div className="relative z-10 flex flex-col gap-2.5 shrink-0">
+                     <button
+                        onClick={() => window.open('https://www.gutenberg.org', '_blank')}
+                        className="flex items-center gap-2 rounded-xl border border-white/20 bg-black/30 backdrop-blur-md px-4 min-w-[130px] py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-white/20 hover:border-white/40"
+                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 drop-shadow-sm">
+                          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                        </svg>
+                        Free Books
+                     </button>
+                     <button
+                        onClick={() => window.open('https://openlibrary.org', '_blank')}
+                        className="flex items-center gap-2 rounded-xl border border-white/20 bg-black/30 backdrop-blur-md px-4 min-w-[130px] py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-white/20 hover:border-white/40"
+                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 drop-shadow-sm">
+                          <path d="M4 22h16" />
+                          <path d="M4 2h16" />
+                          <path d="M6 2v20" />
+                          <path d="M10 2v20" />
+                          <path d="M14 2v20" />
+                          <path d="M18 2v20" />
+                        </svg>
+                        Library
+                     </button>
                   </div>
+
                 </div>
               </div>
-            </section>
+            </div>
 
-            <section className="flex flex-col">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Overview
+            {/* Current Book & Actions Panel (Takes 5/12 on large screens) */}
+            <div className="flex flex-col justify-between rounded-[2rem] border border-[#eeebe4] bg-white p-6 md:col-span-5 lg:col-span-4 lg:p-8 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                   <p className="text-xs font-bold uppercase tracking-widest text-[#8a8178]">
+                     Now Reading
+                   </p>
+                   <ReadAloud
+                     text={currentReading ? `Now reading ${currentReading}` : 'No book chosen'}
+                     size="xs"
+                   />
+                </div>
+                <h3 className="mt-1 line-clamp-2 text-2xl font-serif font-medium text-[#2b2724]">
+                  {currentReading || 'No book yet'}
                 </h3>
-                <ReadAloud text="Overview" size="xs" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                <StatCard
-                  label="Goals completed"
-                  value={`${goalsCompleted}`}
-                  accent="emerald"
-                  icon="🎯"
-                  iconBg="bg-emerald-50"
-                  readText={`Goals completed: ${goalsCompleted}`}
-                />
-                <StatCard
-                  label="Minutes read"
-                  value={`${totalMinutes.toLocaleString()} min`}
-                  accent="blue"
-                  icon="⏱️"
-                  iconBg="bg-blue-50"
-                  readText={`Minutes read: ${totalMinutes.toLocaleString()} minutes`}
-                />
-                <StatCard
-                  label="Books finished"
-                  value={`${booksFinished}`}
-                  accent="violet"
-                  icon="📘"
-                  iconBg="bg-violet-50"
-                  readText={`Books finished: ${booksFinished}`}
-                />
-                <StatCard
-                  label="Reading streak"
-                  value={`${currentStreak} days`}
-                  accent="amber"
-                  icon="✨"
-                  iconBg="bg-amber-50"
-                  readText={`Reading streak: ${currentStreak} days`}
+              <div className="mt-4 flex flex-1 items-center justify-center p-2">
+                <img 
+                  src="/floating_open_book.png" 
+                  alt="Current reading" 
+                  className="w-full max-w-[200px] h-auto object-contain mix-blend-multiply transition-transform duration-700 hover:scale-105 drop-shadow-sm opacity-90"
                 />
               </div>
 
-              <div className="hidden lg:block min-h-[200px]" />
-            </section>
-          </div>
-
-          <div className="space-y-5">
-            <section className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Currently reading
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-                    {currentReading || 'No book selected yet'}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    {currentReading
-                      ? 'Come back to continue where you left off and keep your momentum strong.'
-                      : 'Choose a book or resource to start building your daily reading habit.'}
-                  </p>
-                </div>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-2xl">
-                  📚
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={() => navigate('/read-now')}
-                  className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="w-full rounded-xl bg-[#3f3b39]/80 backdrop-blur-md border border-[#3f3b39] py-3.5 text-sm font-semibold text-[#fcfbfa] shadow-sm transition hover:bg-[#2e2b2a]/90"
                 >
-                  Read now
+                  Read Now
                 </button>
-
                 <button
                   onClick={() => navigate('/log-reading')}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  className="w-full rounded-xl bg-gradient-to-r from-[#8c6b4a] to-[#73583d] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#8c6b4a]/20 transition hover:scale-[1.02] hover:shadow-lg"
                 >
-                  Log reading
+                  Log Time
                 </button>
               </div>
+            </div>
+          </section>
 
-              <div className="mt-3">
-                <ReadAloud
-                  text={
-                    currentReading
-                      ? `Currently reading ${currentReading}`
-                      : 'No current reading selected yet'
-                  }
-                  size="xs"
-                />
-              </div>
-            </section>
+          {/* Stats Row */}
+          <section className="mb-8">
+            <div className="mb-5 pl-1">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#8a8178]">
+                Stats
+              </h3>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-y-8 gap-x-4 px-2 sm:px-4">
+              <InlineStat
+                label="Goals"
+                value={`${goalsCompleted}`}
+                readText={`Goals met: ${goalsCompleted}`}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="m22 2-6.5 6.5"/><path d="M22 2v4"/><path d="M22 2h-4"/></svg>
+                }
+              />
+              <InlineStat
+                label="Minutes"
+                value={`${totalMinutes.toLocaleString()}`}
+                readText={`Minutes read: ${totalMinutes.toLocaleString()}`}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M10 2h4"/><path d="M12 2v3"/></svg>
+                }
+              />
+              <InlineStat
+                label="Books"
+                value={`${booksFinished}`}
+                readText={`Books read: ${booksFinished}`}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                }
+              />
+              <InlineStat
+                label="Streak"
+                value={`${currentStreak}`}
+                readText={`Reading streak: ${currentStreak}`}
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M7 5H3"/></svg>
+                }
+              />
+            </div>
+          </section>
 
-            <section className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Resources
-                  </p>
-                  <h3 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-                    Reading support
-                  </h3>
-                </div>
-                <button
-                  onClick={() => navigate('/read-now')}
-                  className="text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
-                >
-                  Explore
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                <ResourceCard
-                  href="https://www.gutenberg.org"
-                  icon="📚"
-                  title="Project Gutenberg"
-                  subtitle="Free classic eBooks"
-                  readText="Project Gutenberg, free classic eBooks"
-                />
-                <ResourceCard
-                  href="https://openlibrary.org"
-                  icon="📖"
-                  title="Open Library"
-                  subtitle="Borrow and explore books"
-                  readText="Open Library, borrow and explore books"
-                />
-              </div>
-            </section>
-
-            <section>
-              <button
-                onClick={() => navigate('/log-reading')}
-                className="w-full rounded-[1.6rem] bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-5 py-4 text-base font-semibold text-white shadow-[0_16px_34px_rgba(99,102,241,0.28)] transition duration-200 hover:scale-[1.01] hover:shadow-[0_20px_40px_rgba(99,102,241,0.35)]"
-              >
-                Log today’s reading
-              </button>
-              <div className="mt-2 flex justify-center">
-                <ReadAloud text="Log today's reading" />
-              </div>
-            </section>
-          </div>
         </div>
       </main>
 
-      <footer className="mt-8 hidden border-t border-slate-200/80 md:block">
-        <div className="mx-auto w-full max-w-6xl px-4 py-5 text-sm text-slate-400 sm:px-6 lg:px-8">
-          © 2026 Turn The Page. Built to support better reading habits.
+      <footer className="mt-12 hidden border-t border-[#e8e4db] md:block">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8a8178] sm:px-6 lg:px-10">
+          Turn The Page
         </div>
       </footer>
 
+      {/* Adding bottom nav back for mobile purely in case user accidentally relied on it, though Hamburger exists. */}
       <BottomNav />
     </div>
   )

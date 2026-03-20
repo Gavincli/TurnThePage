@@ -1,10 +1,8 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
-import confetti from 'canvas-confetti'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -16,279 +14,263 @@ const getGreeting = () => {
   return 'Good evening'
 }
 
+const goalViews = [
+  {
+    id: 'daily',
+    title: 'Daily goal',
+    subtitle: 'Small steps every day build strong reading habits.',
+    badge: 'Today',
+    icon: '☀️',
+  },
+  {
+    id: 'weekly',
+    title: 'Weekly goal',
+    subtitle: 'Stay consistent through the week and keep your rhythm.',
+    badge: 'This week',
+    icon: '🗓️',
+  },
+  {
+    id: 'monthly',
+    title: 'Monthly goal',
+    subtitle: 'See your progress grow over time and celebrate milestones.',
+    badge: 'This month',
+    icon: '🌙',
+  },
+]
+
+const resolveGoalPeriod = (goal) => {
+  if (goal.period && ['daily', 'weekly', 'monthly'].includes(goal.period)) {
+    return goal.period
+  }
+
+  const text = `${goal.name || ''} ${goal.description || ''}`.toLowerCase()
+
+  if (text.includes('weekly') || text.includes('week')) return 'weekly'
+  if (text.includes('monthly') || text.includes('month')) return 'monthly'
+  return 'daily'
+}
+
+const GoalRow = ({ goal }) => {
+  const clampedCurrent = goal.completed && goal.target ? goal.target : goal.current
+  const progress = goal.target ? Math.min((goal.current / goal.target) * 100, 100) : 0
+
+  return (
+    <div
+      className={`rounded-[1.75rem] border p-4 shadow-sm transition ${
+        goal.completed
+          ? 'border-emerald-200/80 bg-emerald-50/70'
+          : 'border-slate-200/80 bg-white/90'
+      }`}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl ${
+            goal.completed ? 'bg-emerald-100' : 'bg-slate-100'
+          }`}
+        >
+          {goal.icon || '📖'}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1 text-[15px] font-semibold text-slate-900 md:text-base">
+                {goal.name}
+                <ReadAloud
+                  text={`${goal.name}: ${goal.current} out of ${goal.target}${goal.completed ? ', Completed' : ''}`}
+                  size="xs"
+                />
+              </p>
+
+              {goal.description && (
+                <p className="mt-1 flex items-center gap-1 text-xs leading-5 text-slate-500 md:text-sm">
+                  <span>{goal.description}</span>
+                  <ReadAloud text={goal.description} size="xs" />
+                </p>
+              )}
+            </div>
+
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-medium tabular-nums text-slate-500">
+                {clampedCurrent}/{goal.target}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-indigo-500">
+                {Math.round(progress)}%
+              </p>
+              {goal.completed && (
+                <p className="mt-1 text-xs font-semibold text-emerald-600">Done</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                goal.completed ? 'bg-emerald-500' : 'bg-indigo-400'
+              }`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const Goals = () => {
-  const navigate = useNavigate()
-  const { goalProgress, setGoalProgress, goalsCompleted, currentStreak, currentReading } = useApp()
-  const [minutesRead, setMinutesRead] = useState(10)
+  const { goalProgress } = useApp()
+  const [selectedView, setSelectedView] = useState('daily')
 
   const today = new Date()
   const dateStr = `${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}`
-  const completedToday = goalProgress.filter((g) => g.completed).length
-  const totalToday = goalProgress.length
-  const dailyPercent = totalToday ? Math.round((completedToday / totalToday) * 100) : 0
+
+  const activeView = useMemo(
+    () => goalViews.find((view) => view.id === selectedView) || goalViews[0],
+    [selectedView]
+  )
+
+  const filteredGoals = useMemo(() => {
+    return [...goalProgress]
+      .filter((goal) => resolveGoalPeriod(goal) === selectedView)
+      .sort((a, b) => Number(a.completed) - Number(b.completed))
+  }, [goalProgress, selectedView])
+
+  const completedGoals = filteredGoals.filter((g) => g.completed).length
+  const totalGoals = filteredGoals.length
+  const progressPercent = totalGoals ? Math.round((completedGoals / totalGoals) * 100) : 0
 
   return (
-    <div className="min-h-screen pb-24 md:pb-28 overflow-x-hidden bg-[#fafafa]">
-      {/* Header — minimal, Apple-style */}
-      <header className="sticky top-0 z-10 bg-[#fafafa]/80 backdrop-blur-xl">
-        <div className="max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-4 md:pt-8 md:pb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[13px] md:text-sm text-neutral-500 font-medium">{dateStr}</p>
-              <h1 className="text-[28px] md:text-[34px] font-semibold text-neutral-900 tracking-tight mt-0.5 flex items-center gap-2">
-                {getGreeting()}
-                <ReadAloud text={`${getGreeting()}, Daily Goals`} />
-              </h1>
-            </div>
-            <HamburgerMenu />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.12),_transparent_28%),linear-gradient(to_bottom,_#f8fafc,_#eef2ff)] pb-24 md:pb-6">
+      <header className="sticky top-0 z-20 border-b border-white/60 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400">
+              Turn The Page
+            </p>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-900">
+              {getGreeting()}
+              <ReadAloud text={`${getGreeting()}, Goals`} />
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">{dateStr}</p>
           </div>
+          <HamburgerMenu />
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-5 md:px-8 pb-8">
-        {/* Streak — refined, not loud */}
-        <section className="mb-6 md:mb-8">
-          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[13px] text-neutral-500 font-medium">Reading streak</p>
-                <p className="text-[40px] md:text-[48px] font-semibold text-neutral-900 tracking-tight mt-1">
-                  {currentStreak} <span className="text-[20px] md:text-[24px] font-medium text-neutral-500">days</span>
-                </p>
-              </div>
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl md:text-3xl">
-                🔥
-              </div>
-            </div>
-          </div>
-        </section>
+      <main className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-6 lg:px-8 lg:pt-6">
+        <div className="space-y-5">
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
+            <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-indigo-100/90 blur-3xl" />
+            <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-sky-100/80 blur-3xl" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.55),rgba(255,255,255,0.18))]" />
 
-        {/* Progress + Stats — compact row */}
-        <section className="mb-6 md:mb-8">
-          <div className="bg-white rounded-2xl p-5 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[15px] font-medium text-neutral-900">Today&apos;s progress</p>
-              <p className="text-[15px] font-semibold text-emerald-600">{dailyPercent}%</p>
-            </div>
-            <div className="h-2 w-full rounded-full bg-neutral-100 overflow-hidden mb-4">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                style={{ width: `${dailyPercent}%` }}
-              />
-            </div>
-            <div className="flex gap-6">
-              <div>
-                <p className="text-[22px] md:text-[26px] font-semibold text-neutral-900">{completedToday}</p>
-                <p className="text-[12px] text-neutral-500">Done</p>
-              </div>
-              <div>
-                <p className="text-[22px] md:text-[26px] font-semibold text-neutral-900">{totalToday - completedToday}</p>
-                <p className="text-[12px] text-neutral-500">Remaining</p>
-              </div>
-              <div>
-                <p className="text-[22px] md:text-[26px] font-semibold text-neutral-900">{goalsCompleted}</p>
-                <p className="text-[12px] text-neutral-500">All-time</p>
-              </div>
-            </div>
-          </div>
-        </section>
+            <div className="relative">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-sm font-medium text-slate-500">Reading goals</p>
+                  <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-slate-900 lg:text-[2.2rem] lg:leading-[1.05]">
+                    Choose the goal view you want to focus on.
+                  </h2>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
+                    Start small, stay consistent, and keep your reading progress visible.
+                  </p>
+                </div>
 
-        {/* Daily goals — iOS list style */}
-        <section className="mb-6 md:mb-8">
-          <p className="text-[13px] font-medium text-neutral-500 uppercase tracking-wider mb-3 px-1">
-            Daily goals
-          </p>
-          <div className="bg-white rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06)] divide-y divide-neutral-100">
-            {([...goalProgress].sort((a, b) => Number(a.completed) - Number(b.completed))).map((goal) => {
-              const clampedCurrent = goal.completed && goal.target ? goal.target : goal.current
-              const progress = goal.target ? Math.min((goal.current / goal.target) * 100, 100) : 0
-              return (
-                <div
-                  key={goal.id}
-                  className={`flex items-center gap-4 px-5 py-4 md:px-6 md:py-5 ${goal.completed ? 'bg-emerald-50/50' : ''}`}
-                >
-                  <div
-                    className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center text-lg md:text-xl shrink-0 ${
-                      goal.completed ? 'bg-emerald-100' : 'bg-neutral-100'
-                    }`}
-                  >
-                    {goal.icon || '📖'}
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-2xl shadow-sm">
+                  {activeView.icon}
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-[1.6rem] bg-slate-950 p-4 text-white shadow-[0_16px_34px_rgba(2,6,23,0.24)] sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-slate-300">
+                      {activeView.badge}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold">{activeView.title}</p>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+                      {activeView.subtitle}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-[15px] md:text-[16px] font-medium text-neutral-900 flex items-center gap-1">
-                        {goal.name}
-                        <ReadAloud
-                          text={`${goal.name}: ${goal.current} out of ${goal.target}${goal.completed ? ', Completed' : ''}`}
-                          size="xs"
-                        />
-                      </p>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[13px] text-neutral-500 tabular-nums">
-                          {clampedCurrent}/{goal.target}
-                        </span>
-                        {goal.completed && (
-                          <span className="text-[11px] font-medium text-emerald-600">Done</span>
-                        )}
-                      </div>
-                    </div>
-                    {goal.description && (
-                      <p className="mt-1 text-[12px] md:text-[13px] text-neutral-500 flex items-center gap-1">
-                        <span>{goal.description}</span>
-                        <ReadAloud text={goal.description} size="xs" />
-                      </p>
-                    )}
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          goal.completed ? 'bg-emerald-500' : 'bg-neutral-300'
-                        }`}
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
+
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl bg-white/10 p-1.5">
+                    {goalViews.map((view) => {
+                      const isActive = selectedView === view.id
+                      return (
+                        <button
+                          key={view.id}
+                          onClick={() => setSelectedView(view.id)}
+                          className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                            isActive
+                              ? 'bg-white text-slate-900 shadow-sm'
+                              : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          {view.id === 'daily'
+                            ? 'Daily'
+                            : view.id === 'weekly'
+                              ? 'Weekly'
+                              : 'Monthly'}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        </section>
 
-        {/* Primary action — minimal log session form that talks to the backend */}
-        <form
-          className="w-full bg-[#007AFF] hover:bg-[#0066D6] active:scale-[0.98] text-white rounded-xl py-3 md:py-4 px-4 text-[17px] font-semibold transition-all flex items-center justify-between gap-3 mb-4"
-          onSubmit={async (e) => {
-            e.preventDefault()
-            try {
-              const res = await fetch('http://localhost:4000/api/sessions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  userId: '11111111-1111-1111-1111-111111111111',
-                  minutesRead: Number(minutesRead),
-                  sessionDate: new Date().toISOString().slice(0, 10),
-                }),
-              })
-              const data = await res.json()
-
-              if (!res.ok) {
-                // eslint-disable-next-line no-console
-                console.error('Failed to log session', data)
-                return
-              }
-
-              const goals = data.goals || []
-
-              // Update local goalProgress from backend response so cards reflect real state.
-              const mapped = goals.map((g, index) => ({
-                id: index + 1,
-                name: g.title,
-                description: g.description,
-                current: g.progress,
-                target: g.target,
-                completed: g.isCompleted,
-                icon: '📖',
-              }))
-              setGoalProgress(mapped)
-
-              if (data.newlyCompleted && data.newlyCompleted.length > 0) {
-                const names = data.newlyCompleted.map((g) => g.title).join(', ')
-                // Quick confetti burst to celebrate newly completed goals.
-                confetti({
-                  particleCount: 120,
-                  spread: 70,
-                  origin: { y: 0.6 },
-                })
-                // Simple in-browser message; can be replaced with a nicer toast later.
-                // eslint-disable-next-line no-alert
-                alert(`Goal completed: ${names}`)
-              }
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error('Error calling /api/sessions', err)
-            }
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">✏️</span>
-            <span>Log Reading</span>
-            <ReadAloud text="Log Reading" />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min={1}
-              value={minutesRead}
-              onChange={(e) => setMinutesRead(e.target.value)}
-              className="w-20 rounded-lg px-2 py-1 text-[15px] text-neutral-900"
-            />
-            <span className="text-[14px] font-medium">min</span>
-            <button
-              type="submit"
-              className="ml-2 bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 text-[14px] font-semibold"
-            >
-              Save
-            </button>
-          </div>
-        </form>
-
-        {/* Secondary cards — book, tip, week */}
-        <div className="mt-6 md:mt-8 space-y-4">
-          {currentReading && (
-            <div
-              onClick={() => navigate('/read-now')}
-              className="bg-white rounded-2xl p-5 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)] cursor-pointer hover:bg-neutral-50/80 transition-colors"
-            >
-              <p className="text-[12px] text-neutral-500 font-medium mb-1">Currently reading</p>
-              <p className="text-[17px] font-semibold text-neutral-900 flex items-center gap-2">
-                {currentReading}
-                <ReadAloud text={currentReading} size="xs" />
-              </p>
-              <p className="text-[13px] text-[#007AFF] font-medium mt-2">Continue reading →</p>
-            </div>
-          )}
-
-          <div className="bg-white rounded-2xl p-5 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">
-                💡
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-white/10 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Progress</p>
+                    <p className="mt-1 text-2xl font-semibold">{progressPercent}%</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Completed</p>
+                    <p className="mt-1 text-2xl font-semibold">{completedGoals}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Total goals</p>
+                    <p className="mt-1 text-2xl font-semibold">{totalGoals}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-[15px] font-semibold text-neutral-900 mb-1">Daily tip</p>
-                <p className="text-[14px] text-neutral-600 leading-relaxed">
-                  Just 10 minutes of reading a day adds up to 60+ hours per year. Small steps build big habits.
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+                Metas
+              </h3>
+              <ReadAloud text="Metas" size="xs" />
+            </div>
+
+            {filteredGoals.length === 0 ? (
+              <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-8 text-center shadow-sm">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                  {activeView.icon}
+                </div>
+                <p className="mt-4 text-lg font-semibold text-slate-900">
+                  No {selectedView} goals yet
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Once goals are added for this section, they will appear here.
                 </p>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 md:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-            <p className="text-[15px] font-semibold text-neutral-900 mb-4">This week</p>
-            <div className="flex gap-1 mb-4">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => {
-                const isToday = i === today.getDay()
-                const isPast = i < today.getDay()
-                return (
-                  <div
-                    key={i}
-                    className={`flex-1 rounded-lg py-2.5 text-center text-[12px] font-medium ${
-                      isToday
-                        ? 'bg-[#007AFF] text-white'
-                        : isPast
-                          ? 'bg-neutral-100 text-neutral-500'
-                          : 'bg-neutral-50 text-neutral-400'
-                    }`}
-                  >
-                    {day}
-                  </div>
-                )
-              })}
-            </div>
-            <p className="text-[13px] text-neutral-500">
-              {currentStreak} day streak — keep it going
-            </p>
-          </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredGoals.map((goal) => (
+                  <GoalRow key={goal.id} goal={goal} />
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </main>
+
+      <footer className="mt-8 hidden border-t border-slate-200/80 md:block">
+        <div className="mx-auto w-full max-w-6xl px-4 py-5 text-sm text-slate-400 sm:px-6 lg:px-8">
+          © 2026 Turn The Page. Built to support better reading habits.
+        </div>
+      </footer>
 
       <BottomNav />
     </div>

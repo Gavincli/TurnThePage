@@ -8,5 +8,11 @@
     "db:seed": "bash ./scripts/db-seed.sh",
     "db:reset": "bash ./scripts/db-reset.sh",
     "backend": "node backend/src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
   }
 }

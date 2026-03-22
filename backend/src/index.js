@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const goalsRouter = require("./routes/goals");
 const sessionsRouter = require("./routes/sessions");
+const booksRouter = require("./routes/books");
 
 // Load environment variables from .env so PORT and DATABASE_URL are available.
 dotenv.config();
@@ -20,6 +21,9 @@ const PORT = process.env.PORT || 4000;
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+// All book-related endpoints live under /api/books.
+app.use("/api/books", booksRouter);
 
 // All goal-related endpoints live under /api/goals.
 app.use("/api/goals", goalsRouter);

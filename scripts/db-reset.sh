@@ -19,6 +19,5 @@ fi
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_initial_schema.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_seed_data.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_goals_and_sessions.sql
 
 echo "Reset complete: schema dropped, recreated, and seeded."

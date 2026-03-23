@@ -2,17 +2,25 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 
 const AppContext = createContext()
 
+const USER_ID = '11111111-1111-1111-1111-111111111111'
+const API = 'http://localhost:4000'
+
 export const AppProvider = ({ children }) => {
-  const [currentStreak] = useState(5)
-  const [totalMinutes] = useState(1240)
-  const [booksFinished] = useState(12)
+  // --- Stats (streak, minutes, books) ---
+  const [currentStreak, setCurrentStreak] = useState(0)
+  const [todayMinutes, setTodayMinutes] = useState(0)
+  const [weekMinutes, setWeekMinutes] = useState(0)
+  const [totalMinutes, setTotalMinutes] = useState(0)
+  const [booksFinished, setBooksFinished] = useState(0)
+  const [statsLoading, setStatsLoading] = useState(true)
+
+  // --- Currently reading books ---
+  const [currentBooks, setCurrentBooks] = useState([])
+  const [booksLoading, setBooksLoading] = useState(true)
+
+  // --- Goals ---
   const [goalsCompleted, setGoalsCompleted] = useState(0)
-  const [currentReading] = useState('The Hobbit')
-// GUYS THIS IS  JUST AN EXMAPLES ..... THESE GOALS ARE NOT REAL, THE REAL GOALS WILL COME FROM THE BACKEND
-  // Goals should ultimately come from the backend/database.
-  // For now, we keep example goals here as a fallback so the UI can show
-  // the expected structure for daily, weekly, and monthly goals.
-  // This helps the backend team understand the shape the frontend expects.
+
   const sampleGoals = [
     {
       id: 1,
@@ -76,21 +84,59 @@ export const AppProvider = ({ children }) => {
     },
   ]
 
-  // Goals loaded from the backend API.
-  // If the backend is not ready yet or does not return the expected shape,
-  // we fall back to sampleGoals so the frontend still shows the intended design.
   const [goalProgress, setGoalProgress] = useState(sampleGoals)
 
+  // --- Fetch stats from /api/stats ---
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const res = await fetch(`${API}/api/stats?userId=${USER_ID}`)
+        if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`)
+        const data = await res.json()
+        setCurrentStreak(data.streak ?? 0)
+        setTodayMinutes(data.todayMinutes ?? 0)
+        setWeekMinutes(data.weekMinutes ?? 0)
+        setTotalMinutes(data.totalMinutes ?? 0)
+        setBooksFinished(data.booksFinished ?? 0)
+      } catch (err) {
+        console.error('Failed to load stats from backend, using defaults.', err)
+        // Defaults remain 0 — cleaner than showing fake numbers
+      } finally {
+        setStatsLoading(false)
+      }
+    }
+
+    loadStats()
+  }, [])
+
+  // --- Fetch current (unfinished) books from /api/books/current ---
+  useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        const res = await fetch(`${API}/api/books/current?userId=${USER_ID}`)
+        if (!res.ok) throw new Error(`Books fetch failed: ${res.status}`)
+        const data = await res.json()
+        // Only unfinished books — backend already filters is_finished = false
+        setCurrentBooks(data.books ?? [])
+      } catch (err) {
+        console.error('Failed to load current books from backend.', err)
+        setCurrentBooks([])
+      } finally {
+        setBooksLoading(false)
+      }
+    }
+
+    loadBooks()
+  }, [])
+
+  // --- Fetch goals from /api/goals ---
   useEffect(() => {
     const loadGoals = async () => {
       try {
-        const res = await fetch(
-          'http://localhost:4000/api/goals?userId=11111111-1111-1111-1111-111111111111'
-        )
+        const res = await fetch(`${API}/api/goals?userId=${USER_ID}`)
         const data = await res.json()
         const goals = data.goals || []
 
-        // If the backend returns no goals yet, keep the sample goals.
         if (!goals.length) {
           setGoalProgress(sampleGoals)
           setGoalsCompleted(sampleGoals.filter((g) => g.completed).length)
@@ -99,22 +145,12 @@ export const AppProvider = ({ children }) => {
 
         const mapped = goals.map((g, index) => ({
           id: g.id ?? index + 1,
-
-          // Frontend display fields
           name: g.title,
           description: g.description,
           current: g.progress,
           target: g.target,
           completed: g.isCompleted,
           icon: g.icon || '📖',
-
-          // IMPORTANT:
-          // period is needed by the Goals page to decide whether a goal belongs
-          // in the Daily, Weekly, or Monthly section.
-          // Expected values: 'daily', 'weekly', 'monthly'
-          //
-          // If the backend is not sending period yet, we default to 'daily'
-          // so the UI still renders instead of breaking.
           period: g.period || 'daily',
         }))
 
@@ -122,9 +158,6 @@ export const AppProvider = ({ children }) => {
         setGoalsCompleted(mapped.filter((g) => g.completed).length)
       } catch (err) {
         console.error('Failed to load goals from backend, using sample goals instead.', err)
-
-        // Fallback to sample goals so the frontend still demonstrates
-        // the intended structure and UI even if the backend is unavailable.
         setGoalProgress(sampleGoals)
         setGoalsCompleted(sampleGoals.filter((g) => g.completed).length)
       }
@@ -134,13 +167,22 @@ export const AppProvider = ({ children }) => {
   }, [])
 
   const value = {
+    // Stats
     currentStreak,
+    todayMinutes,
+    weekMinutes,
     totalMinutes,
     booksFinished,
+    statsLoading,
+    // Books
+    currentBooks,
+    booksLoading,
+    // Goals
     goalsCompleted,
-    currentReading,
     goalProgress,
     setGoalProgress,
+    // User
+    userId: USER_ID,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

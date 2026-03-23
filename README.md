@@ -37,42 +37,27 @@ psql -U postgres -c "CREATE DATABASE turn_the_page;"
 
 Replace `postgres` with your PostgreSQL username if different.
 
-### 5. Run migrations
+### 5. Run database setup (cross-platform, no scripts required)
 
-Apply all migrations (001 + 002 + 003):
+Use `psql` directly so setup works the same on macOS, Linux, and Windows.
 
-```bash
-npm run db:migrate
-```
-
-If you get errors about `users.user_id` missing, your `DATABASE_URL` is likely pointing to an older DB schema.
-Either switch `DATABASE_URL` to a fresh DB (for example `turn_the_page`) or run:
+Run these commands in the project root:
 
 ```bash
-npm run db:reset
+psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/001_initial_schema.sql
+psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/002_seed_data.sql
 ```
 
-Or run each step individually:
+Notes:
+- Replace the connection string with your own Postgres username/password/host/port/db name.
+- If your password contains special characters, URL-encode them in the connection string.
+- `002_seed_data.sql` is the consolidated migration and already includes the goals/sessions/frequency changes.
+- Migrations are idempotent (`IF NOT EXISTS` + `ON CONFLICT`) and safe to re-run.
 
-```bash
-# Full migration chain (001 schema, 002 seed, 003 goals/sessions tables + seed)
-npm run db:migrate
-
-# Seed only (re-runs 002 seed data)
-npm run db:seed
-
-# Full reset (drops public schema, then re-runs 001 + 002 + 003)
-npm run db:reset
-```
-
-Migration files live in `db/migrations/` and are safe to re-run (`IF NOT EXISTS` and `ON CONFLICT` guards).
-`db:migrate` and `db:reset` include `003_goals_and_sessions.sql`, which creates `goal_templates`, `reading_sessions`, and `user_goals`.
-
-| Script | What it does |
-|--------|-------------|
-| `npm run db:migrate` | Runs 001 + 002 + 003 migrations |
-| `npm run db:seed` | Runs 002 seed data only |
-| `npm run db:reset` | Drops public schema, then runs 001 + 002 + 003 |
+Optional (still available if your shell supports it):
+- `npm run db:migrate`
+- `npm run db:seed`
+- `npm run db:reset`
 
 ### 6. Start the frontend
 
@@ -123,7 +108,7 @@ TurnThePage
 │   └── migrations/   # SQL migrations (schema + seed)
 ├── frontend/         # React + Vite frontend
 ├── backend/          # Express API + Postgres (goals and sessions)
-└── scripts/          # DB helper scripts used by npm commands
+└── scripts/          # Optional DB helper scripts used by npm commands
 ```
 
 ## Tech Stack

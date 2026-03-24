@@ -21,7 +21,7 @@ Create a `.env` file in the project root:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/turn_the_page
-PORT=3001
+PORT=4000
 ```
 
 Important:

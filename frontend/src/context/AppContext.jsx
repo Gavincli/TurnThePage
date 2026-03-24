@@ -163,7 +163,12 @@ export const AppProvider = ({ children }) => {
       }
     }
 
-    loadGoals()
+    // Defer goals fetch so it doesn't compete with initial render (helps FCP/LCP)
+    const usedIdle = typeof requestIdleCallback !== 'undefined'
+    const id = usedIdle
+      ? requestIdleCallback(() => loadGoals(), { timeout: 2000 })
+      : setTimeout(loadGoals, 0)
+    return () => (usedIdle ? cancelIdleCallback(id) : clearTimeout(id))
   }, [])
 
   const value = {

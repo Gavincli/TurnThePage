@@ -11,7 +11,6 @@ const HamburgerMenu = () => {
     { path: '/goals', label: 'Goals', icon: '🎯' },
     { path: '/log-reading', label: 'Log Time', icon: '✏️' },
     { path: '/shop', label: 'Shop', icon: '🛒' },
-    { path: '/friends', label: 'Friends', icon: '👥' },
     { path: '/avatar', label: 'Avatar', icon: '🙂' },
   ]
 

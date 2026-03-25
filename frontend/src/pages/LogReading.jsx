@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+
+import React, { useEffect, useState } from 'react'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 import BottomNav from '../components/BottomNav'
+import MuseumBackground from '../components/MuseumBackground'
 
 const API_BASE = 'http://localhost:3001'
 const TEST_USER_ID = '11111111-1111-1111-1111-111111111111'
@@ -252,6 +254,7 @@ const LogReading = () => {
   if (submitSuccess) {
     return (
       <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-16 font-sans">
+        <MuseumBackground />
         <a
           href="#main-content"
           className="absolute left-4 -top-12 z-30 bg-[#8c6b4a] px-4 py-2 text-white font-medium transition-[top] duration-150 focus:top-4 focus:outline-none focus:ring-4 focus:ring-[#8c6b4a]/50"
@@ -291,9 +294,10 @@ const LogReading = () => {
       </div>
     )
   }
-
+ 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-16 font-sans">
+      <MuseumBackground />
       <a
         href="#main-content"
         className="absolute left-4 -top-12 z-30 bg-[#8c6b4a] px-4 py-2 text-white font-medium transition-[top] duration-150 focus:top-4 focus:outline-none focus:ring-4 focus:ring-[#8c6b4a]/50"

@@ -38,15 +38,13 @@ const goalViews = [
   },
 ]
 
+const GOAL_TAB_PERIODS = new Set(['daily', 'weekly', 'monthly'])
+
+/** Bucket for the Daily / Weekly / Monthly filter; driven by API `period` from goal_templates. */
 const resolveGoalPeriod = (goal) => {
-  if (goal.period && ['daily', 'weekly', 'monthly'].includes(goal.period)) {
+  if (goal.period && GOAL_TAB_PERIODS.has(goal.period)) {
     return goal.period
   }
-
-  const text = `${goal.name || ''} ${goal.description || ''}`.toLowerCase()
-
-  if (text.includes('weekly') || text.includes('week')) return 'weekly'
-  if (text.includes('monthly') || text.includes('month')) return 'monthly'
   return 'daily'
 }
 

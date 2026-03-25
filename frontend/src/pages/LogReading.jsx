@@ -3,7 +3,7 @@ import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 import BottomNav from '../components/BottomNav'
 
-const API_BASE = 'http://localhost:4000'
+const API_BASE = 'http://localhost:3001'
 const TEST_USER_ID = '11111111-1111-1111-1111-111111111111'
 const BOOKS_STORAGE_KEY = 'turn-the-page-books'
 const BOOK_READS_STORAGE_KEY = 'turn-the-page-book-reads'

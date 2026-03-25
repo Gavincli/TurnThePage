@@ -14,14 +14,15 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    // This SELECT matches the integration guide in db/migrations/003_goals_and_sessions.sql
-    // and uses a parameterized query ($1) to avoid SQL injection.
+    // goal_templates.period drives Daily / Weekly / Monthly tabs on the Goals page.
+    // Uses a parameterized query ($1) to avoid SQL injection.
     const result = await query(
       `
       SELECT
         gt.template_id,
         gt.title,
         gt.description,
+        gt.period,
         gt.points_value,
         gt.target_value,
         ug.progress,
@@ -48,6 +49,7 @@ router.get('/', async (req, res) => {
       templateId: row.template_id,
       title: row.title,
       description: row.description,
+      period: row.period,
       points: row.points_value,
       target: row.target_value,
       progress: row.progress,

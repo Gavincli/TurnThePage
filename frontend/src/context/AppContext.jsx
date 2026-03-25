@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 const AppContext = createContext()
 
 const USER_ID = '11111111-1111-1111-1111-111111111111'
-const API = 'http://localhost:4000'
+const API = 'http://localhost:3001'
 
 export const AppProvider = ({ children }) => {
   // --- Stats (streak, minutes, books) ---

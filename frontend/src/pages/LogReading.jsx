@@ -350,7 +350,7 @@ const LogReading = () => {
           <section className="relative overflow-hidden rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
             <div
-              className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply transition-opacity duration-700 sm:opacity-[0.35]"
+              className="pointer-events-none absolute inset-0 z-0 hidden opacity-40 mix-blend-multiply transition-opacity duration-700 sm:block sm:opacity-[0.35]"
               style={{
                 maskImage: 'linear-gradient(to right, transparent 10%, black 80%)',
                 WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)',
@@ -378,7 +378,7 @@ const LogReading = () => {
                     Track your minutes, pages, and progress.
                   </p>
                 </div>
-                <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-white/50 bg-white/70 text-2xl text-[#9c7846] shadow-sm backdrop-blur-md sm:flex">
+                <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-white/50 bg-white text-2xl text-[#9c7846] shadow-sm sm:flex">
                   ✏️
                 </div>
               </div>
@@ -641,7 +641,7 @@ const LogReading = () => {
                   )}
                 </div>
 
-                <label htmlFor="finished-book" className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e8e4db] bg-white/60 px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3">
+                <label htmlFor="finished-book" className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e8e4db] bg-white px-3 py-2.5 sm:px-4 sm:py-3">
                   <input
                     id="finished-book"
                     type="checkbox"
@@ -666,7 +666,7 @@ const LogReading = () => {
             </div>
           </section>
 
-          <section className="overflow-x-auto rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
+          <section className="relative z-10 overflow-x-auto rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
             <h2 className="text-lg font-serif font-medium tracking-tight text-[#2b2724] sm:text-xl">
               Books you&apos;ve read
             </h2>

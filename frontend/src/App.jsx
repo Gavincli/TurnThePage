@@ -7,7 +7,6 @@ const Goals = lazy(() => import('./pages/Goals'))
 const ReadNow = lazy(() => import('./pages/ReadNow'))
 const LogReading = lazy(() => import('./pages/LogReading'))
 const Shop = lazy(() => import('./pages/Shop'))
-const Friends = lazy(() => import('./pages/Friends'))
 const AvatarSelect = lazy(() => import('./pages/AvatarSelect'))
 
 function PageFallback() {
@@ -29,7 +28,6 @@ function App() {
             <Route path="/read-now" element={<ReadNow />} />
             <Route path="/log-reading" element={<LogReading />} />
             <Route path="/shop" element={<Shop />} />
-            <Route path="/friends" element={<Friends />} />
             <Route path="/avatar" element={<AvatarSelect />} />
           </Routes>
         </Suspense>

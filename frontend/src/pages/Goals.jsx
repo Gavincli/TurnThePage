@@ -277,15 +277,15 @@ const Goals = () => {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-[1.4rem] bg-[#3f3b39]/50 backdrop-blur-md p-5 text-[#fcfbfa] shadow-lg border border-white/10 sm:p-6 relative overflow-hidden">
+              <div className="mt-6 rounded-[1.4rem] bg-[#3f3b39]/50 backdrop-blur-md py-4 px-5 text-[#fcfbfa] shadow-lg border border-white/10 sm:py-5 sm:px-6 relative overflow-hidden">
                  <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#f5efe6]/20 blur-2xl" />
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a69e98]">
+                    <p className="text-xs font-black uppercase tracking-[0.25em] text-white">
                       {activeView.badge}
                     </p>
-                    <p className="mt-2 text-2xl font-serif font-medium">{activeView.title}</p>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-[#c4bbb2]">
+                    <p className="mt-1 text-3xl font-serif font-medium leading-tight">{activeView.title}</p>
+                    <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[#c4bbb2]">
                       {activeView.subtitle}
                     </p>
                   </div>
@@ -314,7 +314,7 @@ const Goals = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-[1rem] bg-black/20 backdrop-blur-sm px-5 py-4 border border-white/5">
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">Progress</p>
                     <p className="mt-1 text-2xl font-serif text-white">{progressPercent}%</p>

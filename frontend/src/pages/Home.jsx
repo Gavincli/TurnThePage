@@ -8,29 +8,73 @@ import BottomNav from '../components/BottomNav'
 import MuseumBackground from '../components/MuseumBackground'
 
 
-
-const ResourceCard = ({ href, icon, title, readText }) => {
+const InlineStat = ({ label, value, icon, readText, loading }) => {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex flex-col justify-between rounded-3xl border border-[#e6e2db] bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    <div
+      className="flex items-center gap-2.5 sm:gap-3 transition duration-200 hover:-translate-y-0.5"
+      aria-label={readText}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f5efe6] text-[#9c7846] text-xl">
-          {icon}
-        </div>
-        <div className="shrink-0 pt-0.5">
-          <ReadAloud text={readText} size="xs" />
-        </div>
+      <div className="text-[#2b2724] opacity-80 flex shrink-0 drop-shadow-sm">{icon}</div>
+      <div className="flex items-baseline gap-1.5 sm:gap-2 border-b border-transparent">
+        <p className="text-3xl sm:text-4xl font-serif text-[#2b2724] font-medium tracking-tight">
+          {loading ? (
+            <span className="inline-block h-8 w-12 animate-pulse rounded-md bg-[#e8e4db]" />
+          ) : (
+            value
+          )}
+        </p>
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[#2b2724] opacity-80">
+          {label}
+        </p>
       </div>
-      <div>
-        <h4 className="mt-4 text-lg font-serif font-medium leading-tight text-[#2b2724]">
-          {title}
-        </h4>
+    </div>
+  )
+}
+
+// Currently reading list — shows unfinished books from the backend.
+// If no books, shows a clean empty state.
+const CurrentlyReadingPanel = ({ books, loading }) => {
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-10 w-full animate-pulse rounded-xl bg-[#f0ece4]"
+          />
+        ))}
       </div>
-    </a>
+    )
+  }
+
+  if (!books || books.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-4 text-center">
+        <img
+          src="/open_watercolor_book.png"
+          alt=""
+          className="mx-auto h-20 w-20 object-contain opacity-70 mix-blend-multiply drop-shadow-sm"
+        />
+        <p className="mt-3 text-sm font-serif text-[#6b645d]">No books in progress yet.</p>
+        <p className="mt-1 text-xs text-[#9a9390]">Log a session to add one.</p>
+      </div>
+    )
+  }
+
+  return (
+    <ul className="space-y-2">
+      {books.map((book) => (
+        <li
+          key={book.bookId}
+          className="flex items-center gap-3 rounded-xl border border-[#eeebe4] bg-[#fdfbf9] px-4 py-3"
+        >
+          <span className="text-lg">📖</span>
+          <span className="line-clamp-1 text-sm font-serif font-medium text-[#2b2724]">
+            {book.title}
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -38,11 +82,25 @@ const Home = () => {
   const navigate = useNavigate()
   const {
     currentStreak,
+    todayMinutes,
+    weekMinutes,
     totalMinutes,
     booksFinished,
+    statsLoading,
+    currentBooks,
+    booksLoading,
     goalsCompleted,
-    currentReading,
   } = useApp()
+
+  // Label for the "Now Reading" header area
+  const nowReadingLabel =
+    booksLoading
+      ? 'Loading…'
+      : currentBooks.length === 0
+        ? 'No book chosen'
+        : currentBooks.length === 1
+          ? `Now reading ${currentBooks[0].title}`
+          : `Reading ${currentBooks.length} books`
 
   return (
     <div className="relative min-h-screen bg-white pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
@@ -58,7 +116,11 @@ const Home = () => {
               <ReadAloud text="Home" size="sm" />
             </h1>
             <p className="mt-1 text-xs sm:text-sm font-medium text-[#8a8178]">
-              {new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).format(new Date())}
+              {new Intl.DateTimeFormat('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+              }).format(new Date())}
             </p>
           </div>
           <HamburgerMenu />
@@ -67,21 +129,26 @@ const Home = () => {
 
       <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
         <div className="space-y-12">
-          
+
           {/* Top Dashboard Row */}
           <section className="grid gap-6 md:grid-cols-12 md:grid-rows-1">
             
             {/* Habit / Overview Panel (Takes 8/12 on large screens) */}
             <div className="relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-6 md:col-span-8 lg:col-span-9 lg:p-8 shadow-sm">
+
+            {/* Habit / Overview Panel */}
+            <div className="relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-6 md:col-span-7 lg:col-span-8 lg:p-8 shadow-sm">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
-              
-              {/* Soft background illustration */}
+
               <div className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply transition-opacity duration-700 sm:opacity-50">
-                <img 
-                  src="/library.png" 
-                  alt="" 
+                <img
+                  src="/library.png"
+                  alt=""
                   className="h-full w-full object-cover object-[center_20%]"
-                  style={{ maskImage: 'linear-gradient(to right, transparent 10%, black 80%)', WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)' }}
+                  style={{
+                    maskImage: 'linear-gradient(to right, transparent 10%, black 80%)',
+                    WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)',
+                  }}
                 />
               </div>
 
@@ -104,32 +171,55 @@ const Home = () => {
                 </button>
               </div>
 
+              {/* Dark stats bar */}
               <div className="relative mt-8 rounded-[1.4rem] bg-[#3f3b39]/60 backdrop-blur-md px-6 py-5 text-[#fcfbfa] shadow-lg border border-white/10 overflow-hidden z-10">
                 <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#f5efe6]/20 blur-2xl" />
                 <div className="flex flex-row items-center justify-around sm:justify-start w-full">
                   
                   {/* Streak Compact Badge */}
                   <div className="relative z-10 flex flex-col items-center justify-center pl-2 sm:pl-4">
+
+                <div className="flex flex-row items-center justify-between gap-4">
+
+                  {/* Streak badge */}
+                  <div className="relative z-10 flex flex-col items-center justify-center pl-2">
                     <div className="flex flex-col items-center drop-shadow-md">
-                      <svg width="38" height="38" viewBox="0 0 24 24" fill="url(#flame-gradient)" stroke="url(#flame-gradient)" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-sm">
+                      <svg
+                        width="38"
+                        height="38"
+                        viewBox="0 0 24 24"
+                        fill="url(#flame-gradient)"
+                        stroke="url(#flame-gradient)"
+                        strokeWidth="0.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="drop-shadow-sm"
+                      >
                         <defs>
                           <linearGradient id="flame-gradient" x1="0" y1="1" x2="0" y2="0">
-                            <stop offset="0%" stopColor="#f43f5e" /> {/* Rose-500 */}
-                            <stop offset="50%" stopColor="#f97316" /> {/* Orange-500 */}
-                            <stop offset="100%" stopColor="#fbbf24" /> {/* Amber-400 */}
+                            <stop offset="0%" stopColor="#f43f5e" />
+                            <stop offset="50%" stopColor="#f97316" />
+                            <stop offset="100%" stopColor="#fbbf24" />
                           </linearGradient>
                         </defs>
                         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
                       </svg>
-                      <p className="mt-0.5 text-5xl font-serif text-white font-bold leading-none">
-                         {currentStreak}
-                      </p>
+                      {statsLoading ? (
+                        <span className="mt-0.5 inline-block h-12 w-10 animate-pulse rounded-md bg-white/20" />
+                      ) : (
+                        <p className="mt-0.5 text-5xl font-serif text-white font-bold leading-none">
+                          {currentStreak}
+                        </p>
+                      )}
                     </div>
                     <p className="mt-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-white/80 drop-shadow-sm">
                       Day Streak
                     </p>
                     <div className="mt-1">
-                      <ReadAloud text={`Current streak: ${currentStreak} days`} size="xs" />
+                      <ReadAloud
+                        text={`Current streak: ${currentStreak} days`}
+                        size="xs"
+                      />
                     </div>
                   </div>
 
@@ -153,6 +243,56 @@ const Home = () => {
                       <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{booksFinished}</p>
                       <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-[0.65rem] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/80 drop-shadow-sm text-center">Books</p>
                     </div>
+                  {/* Today / This week mini stats */}
+                  <div className="relative z-10 flex flex-col gap-2 text-right">
+                    <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-white/60">
+                        Today
+                      </p>
+                      {statsLoading ? (
+                        <span className="inline-block h-6 w-14 animate-pulse rounded bg-white/20" />
+                      ) : (
+                        <p className="text-xl font-serif text-white font-medium">
+                          {todayMinutes} <span className="text-xs text-white/70">min</span>
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-white/60">
+                        This week
+                      </p>
+                      {statsLoading ? (
+                        <span className="inline-block h-6 w-14 animate-pulse rounded bg-white/20" />
+                      ) : (
+                        <p className="text-xl font-serif text-white font-medium">
+                          {weekMinutes} <span className="text-xs text-white/70">min</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="relative z-10 flex flex-col gap-2.5 shrink-0">
+                    <button
+                      onClick={() => window.open('https://www.gutenberg.org', '_blank')}
+                      className="flex items-center gap-2 rounded-xl border border-white/20 bg-black/30 backdrop-blur-md px-4 min-w-[130px] py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-white/20 hover:border-white/40"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 drop-shadow-sm">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                      </svg>
+                      Free Books
+                    </button>
+                    <button
+                      onClick={() => window.open('https://openlibrary.org', '_blank')}
+                      className="flex items-center gap-2 rounded-xl border border-white/20 bg-black/30 backdrop-blur-md px-4 min-w-[130px] py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-white/20 hover:border-white/40"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 drop-shadow-sm">
+                        <path d="M4 22h16" /><path d="M4 2h16" /><path d="M6 2v20" />
+                        <path d="M10 2v20" /><path d="M14 2v20" /><path d="M18 2v20" />
+                      </svg>
+                      Library
+                    </button>
                   </div>
 
                 </div>
@@ -161,20 +301,15 @@ const Home = () => {
 
             {/* Current Book & Actions Panel (Takes 4/12 on large screens) */}
             <div className="flex flex-col justify-between rounded-[2rem] border border-[#eeebe4] bg-white p-6 md:col-span-4 lg:col-span-3 lg:p-8 shadow-sm">
+            {/* Currently Reading Panel */}
+            <div className="flex flex-col justify-between rounded-[2rem] border border-[#eeebe4] bg-white p-6 md:col-span-5 lg:col-span-4 lg:p-8 shadow-sm">
               <div>
                 <div className="flex items-center justify-between">
-                   <p className="text-xs font-bold uppercase tracking-widest text-[#8a8178]">
-                     Now Reading
-                   </p>
-                   <ReadAloud
-                     text={currentReading ? `Now reading ${currentReading}` : 'No book chosen'}
-                     size="xs"
-                   />
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#8a8178]">
+                    Now Reading
+                  </p>
+                  <ReadAloud text={nowReadingLabel} size="xs" />
                 </div>
-                <h3 className="mt-1 line-clamp-2 text-2xl font-serif font-medium text-[#2b2724]">
-                  {currentReading || 'No book yet'}
-                </h3>
-              </div>
 
               <div className="mt-4 flex flex-1 items-center justify-center p-2">
                 <img 
@@ -182,7 +317,49 @@ const Home = () => {
                   alt="Current reading" 
                   className="w-full max-w-[130px] h-auto object-contain mix-blend-multiply transition-transform duration-700 hover:scale-105 drop-shadow-sm opacity-90 mx-auto"
                 />
+                {/* Show first book title as heading if available */}
+                {!booksLoading && currentBooks.length > 0 && (
+                  <h3 className="mt-1 line-clamp-2 text-2xl font-serif font-medium text-[#2b2724]">
+                    {currentBooks[0].title}
+                    {currentBooks.length > 1 && (
+                      <span className="ml-2 text-sm font-sans font-normal text-[#8a8178]">
+                        +{currentBooks.length - 1} more
+                      </span>
+                    )}
+                  </h3>
+                )}
+
+                {!booksLoading && currentBooks.length === 0 && (
+                  <h3 className="mt-1 text-xl font-serif font-medium text-[#9a9390]">
+                    No book yet
+                  </h3>
+                )}
+
+                {booksLoading && (
+                  <div className="mt-1 h-8 w-40 animate-pulse rounded-md bg-[#f0ece4]" />
+                )}
               </div>
+
+              {/* Book image or list if multiple */}
+              {!booksLoading && currentBooks.length <= 1 ? (
+                <div className="mt-4 flex flex-1 items-center justify-center p-2">
+                  <img
+                    src="/floating_open_book.png"
+                    alt="Current reading"
+                    className="w-full max-w-[200px] h-auto object-contain mix-blend-multiply transition-transform duration-700 hover:scale-105 drop-shadow-sm opacity-90"
+                  />
+                </div>
+              ) : (
+                <div className="mt-4 flex-1">
+                  <CurrentlyReadingPanel books={currentBooks} loading={booksLoading} />
+                </div>
+              )}
+
+              {booksLoading && (
+                <div className="mt-4 flex flex-1 items-center justify-center p-2">
+                  <div className="h-40 w-40 animate-pulse rounded-2xl bg-[#f0ece4]" />
+                </div>
+              )}
 
               <div className="mt-6 flex flex-col gap-3">
                 <button
@@ -246,7 +423,6 @@ const Home = () => {
         </div>
       </footer>
 
-      {/* Adding bottom nav back for mobile purely in case user accidentally relied on it, though Hamburger exists. */}
       <BottomNav />
     </div>
   )

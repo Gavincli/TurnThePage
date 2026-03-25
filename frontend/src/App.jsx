@@ -1,27 +1,38 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
-import Home from './pages/Home'
-import Goals from './pages/Goals'
-import ReadNow from './pages/ReadNow'
-import LogReading from './pages/LogReading'
-import Shop from './pages/Shop'
-import Friends from './pages/Friends'
-import AvatarSelect from './pages/AvatarSelect'
+
+const Home = lazy(() => import('./pages/Home'))
+const Goals = lazy(() => import('./pages/Goals'))
+const ReadNow = lazy(() => import('./pages/ReadNow'))
+const LogReading = lazy(() => import('./pages/LogReading'))
+const Shop = lazy(() => import('./pages/Shop'))
+const Friends = lazy(() => import('./pages/Friends'))
+const AvatarSelect = lazy(() => import('./pages/AvatarSelect'))
+
+function PageFallback() {
+  return (
+    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] flex items-center justify-center" aria-live="polite" aria-busy="true">
+      <div className="h-8 w-8 animate-pulse rounded-full bg-[#8c6b4a]/20" role="status" aria-label="Loading page" />
+    </div>
+  )
+}
 
 function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/goals" element={<Goals />} />
-          <Route path="/read-now" element={<ReadNow />} />
-          <Route path="/log-reading" element={<LogReading />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/friends" element={<Friends />} />
-          <Route path="/avatar" element={<AvatarSelect />} />
-        </Routes>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/goals" element={<Goals />} />
+            <Route path="/read-now" element={<ReadNow />} />
+            <Route path="/log-reading" element={<LogReading />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/avatar" element={<AvatarSelect />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AppProvider>
   )

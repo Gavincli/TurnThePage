@@ -3,6 +3,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const goalsRouter = require("./routes/goals");
 const sessionsRouter = require("./routes/sessions");
+const booksRouter = require("./routes/books");
+const statsRouter = require("./routes/stats");
 
 // Load environment variables from .env so PORT and DATABASE_URL are available.
 dotenv.config();
@@ -21,11 +23,17 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// All book-related endpoints live under /api/books.
+app.use("/api/books", booksRouter);
+
 // All goal-related endpoints live under /api/goals.
 app.use("/api/goals", goalsRouter);
 
 // All reading-session writes live under /api/sessions.
 app.use("/api/sessions", sessionsRouter);
+
+// Home page dashboard stats (streak, today, week, totals).
+app.use("/api/stats", statsRouter);
 
 app.listen(PORT, () => {
   // This log is useful when you are debugging which port the backend is actually using.

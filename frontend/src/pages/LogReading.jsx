@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
+import BottomNav from '../components/BottomNav'
+import MuseumBackground from '../components/MuseumBackground'
 
 const quickMinutes = [10, 20, 30, 45]
 // I JUST IMPLEMENTED THE POSSIBLE DESIGN. BUT THIS IS NOT HOW THE LOG PAE SHOULD BE, YOU CAN MAKE IT MORE COMPLETE AND BETTER
@@ -26,8 +28,9 @@ const LogReading = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-16 font-sans">
-      <header className="sticky top-0 z-20 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
+    <div className="relative min-h-screen bg-white pb-16 font-sans overflow-x-hidden text-[#2b2724]">
+      <MuseumBackground />
+      <header className="sticky top-0 z-30 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
           <div>
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#8a8178]">
@@ -45,7 +48,7 @@ const LogReading = () => {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
+      <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
         <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
           <section className="relative overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-5 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:p-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
@@ -91,8 +94,8 @@ const LogReading = () => {
                           onClick={() => handleQuickSelect(minutes)}
                           className={`rounded-xl px-4 py-3.5 text-sm font-semibold transition ${
                             isActive
-                              ? 'bg-[#3f3b39]/80 backdrop-blur-md text-[#fcfbfa] shadow-sm border border-[#3f3b39]/50'
-                              : 'border border-[#e8e4db] bg-white/60 backdrop-blur-sm text-[#4a4542] hover:bg-white/80 cursor-pointer shadow-sm'
+                              ? 'bg-[#3f3b39] text-[#fcfbfa] shadow-md border border-[#3f3b39]'
+                              : 'border border-[#e8e4db] bg-white text-[#4a4542] hover:bg-[#fbf9f5] cursor-pointer shadow-sm'
                           }`}
                         >
                           {minutes} min
@@ -115,7 +118,7 @@ const LogReading = () => {
                     min="1"
                     value={minutesRead}
                     onChange={handleMinutesChange}
-                    className="w-full rounded-xl border border-[#dcd7d0] bg-white/60 backdrop-blur-sm px-4 py-4 text-xl font-serif font-medium text-[#2b2724] shadow-sm outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
+                    className="w-full rounded-xl border border-[#e8e4db] bg-white px-4 py-4 text-xl font-serif font-medium text-[#2b2724] shadow-sm outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
                     placeholder="Minutes"
                   />
                 </div>
@@ -131,7 +134,7 @@ const LogReading = () => {
           </section>
 
           <section className="space-y-5">
-            <div className="rounded-[2rem] border border-[#eeebe4] bg-white p-6 shadow-[0_8px_32px_rgba(71,63,55,0.04)]">
+            <div className="rounded-[2rem] border border-[#e8e4db] bg-white p-6 shadow-md">
               <h3 className="mt-2 text-xl font-serif font-medium tracking-tight text-[#2b2724]">
                 Why save?
               </h3>
@@ -140,7 +143,7 @@ const LogReading = () => {
               </p>
             </div>
 
-            <div className="rounded-[2rem] border border-[#eeebe4] bg-white p-6 shadow-[0_8px_32px_rgba(71,63,55,0.04)]">
+            <div className="rounded-[2rem] border border-[#e8e4db] bg-white p-6 shadow-md">
               <h3 className="mt-2 text-xl font-serif font-medium tracking-tight text-[#2b2724]">
                 Remember
               </h3>
@@ -157,6 +160,7 @@ const LogReading = () => {
           Turn The Page.
         </div>
       </footer>
+      <BottomNav />
     </div>
   )
 }

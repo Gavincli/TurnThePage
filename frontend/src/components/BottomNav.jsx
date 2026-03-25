@@ -12,7 +12,6 @@ const BottomNav = () => {
     { path: '/goals', label: 'Goals', icon: '🎯' },
     { path: '/log-reading', labelShort: 'Log', label: 'Log Reading', icon: '✏️' },
     { path: '/shop', label: 'Shop', icon: '🛒' },
-    { path: '/friends', label: 'Friends', icon: '👥' },
   ]
 
   return (
@@ -22,10 +21,10 @@ const BottomNav = () => {
           <button
             key={path}
             onClick={() => navigate(path)}
-            className={`flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-3 py-2 transition-colors ${
+            className={`flex min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 transition-all duration-300 ${
               isActive(path)
-                ? 'text-[#3f3b39]'
-                : 'text-[#a69e98] hover:text-[#6b645d]'
+                ? 'bg-[#f4ece1] text-[#3f3b39] shadow-sm'
+                : 'text-[#a69e98] hover:bg-[#faf7f2] hover:text-[#6b645d]'
             }`}
           >
             <span className="text-[22px] leading-none">{icon}</span>

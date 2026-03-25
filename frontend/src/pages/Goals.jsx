@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react'
+import confetti from 'canvas-confetti'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
+import MuseumBackground from '../components/MuseumBackground'
+
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -37,7 +40,7 @@ const goalViews = [
     icon: '🌙',
   },
 ]
-
+ 
 const resolveGoalPeriod = (goal) => {
   if (goal.period && ['daily', 'weekly', 'monthly'].includes(goal.period)) {
     return goal.period
@@ -51,15 +54,39 @@ const resolveGoalPeriod = (goal) => {
 }
 
 const GoalRow = ({ goal }) => {
+  const { updateGoalProgress, markGoalCompleted, undoGoalCompletion, deleteGoal } = useApp()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const clampedCurrent = goal.completed && goal.target ? goal.target : goal.current
   const progress = goal.target ? Math.min((goal.current / goal.target) * 100, 100) : 0
 
+  const handleComplete = () => {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#8c6b4a', '#5f8779', '#c4bbb2', '#e6ebe9']
+    })
+    markGoalCompleted(goal.id)
+  }
+
+  const handleIncrement = () => {
+    if (goal.current + 1 >= goal.target) {
+      handleComplete()
+    } else {
+      updateGoalProgress(goal.id, goal.current + 1)
+    }
+  }
+
+  const handleDecrement = () => {
+    updateGoalProgress(goal.id, goal.current - 1)
+  }
+
   return (
     <div
-      className={`rounded-[1.4rem] border p-4 shadow-sm transition ${
+      className={`rounded-[1.4rem] border p-4 shadow-md transition ${
         goal.completed
           ? 'border-[#c8d1cf] bg-[#fdfbf9]'
-          : 'border-[#eeebe4] bg-white'
+          : 'border-[#e8e4db] bg-white'
       }`}
     >
       <div className="flex items-start gap-4">
@@ -98,7 +125,36 @@ const GoalRow = ({ goal }) => {
                 {Math.round(progress)}%
               </p>
               {goal.completed && (
-                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#47665b]">Done</p>
+                <div className="relative mt-2 flex items-center justify-end gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#47665b]">Done</p>
+                  <button
+                    onClick={() => setIsMenuOpen((prev) => !prev)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e6ebe9] text-[#47665b] transition hover:bg-[#d5dedb] focus:outline-none"
+                    aria-label="Options"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                    </svg>
+                  </button>
+                  {isMenuOpen && (
+                    <div className="absolute right-0 top-8 z-30 w-32 origin-top-right rounded-xl border border-[#eeebe4] bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] select-none">
+                      <button 
+                        onClick={() => { undoGoalCompletion(goal.id); setIsMenuOpen(false); }} 
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#4a4542] hover:bg-[#f5efe6] transition"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+                        Undo
+                      </button>
+                      <button 
+                        onClick={() => { deleteGoal(goal.id); setIsMenuOpen(false); }} 
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 transition"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6L17 21H7L5 6"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -111,6 +167,39 @@ const GoalRow = ({ goal }) => {
               style={{ width: `${progress}%` }}
             />
           </div>
+
+          {!goal.completed && (
+            <div className="mt-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDecrement}
+                  disabled={goal.current <= 0}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eeebe4] bg-[#fcfbfa] pb-0.5 text-lg leading-none text-[#6b645d] shadow-sm transition hover:bg-[#f5efe6] disabled:opacity-50 disabled:hover:bg-[#fcfbfa]"
+                  aria-label="Decrease progress"
+                >
+                  &minus;
+                </button>
+                <div className="w-8 text-center font-serif text-[15px] font-medium text-[#2b2724] md:text-base">
+                  {clampedCurrent}
+                </div>
+                <button
+                  onClick={handleIncrement}
+                  disabled={goal.current >= goal.target}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eeebe4] bg-[#fcfbfa] pb-0.5 text-lg leading-none text-[#6b645d] shadow-sm transition hover:bg-[#f5efe6] disabled:opacity-50 disabled:hover:bg-[#fcfbfa]"
+                  aria-label="Increase progress"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                onClick={handleComplete}
+                className="rounded-full bg-gradient-to-r from-[#8c6b4a] to-[#73583d] px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#ffffff] shadow-sm shadow-[#8c6b4a]/20 transition hover:scale-[1.02] hover:shadow-md"
+              >
+                Complete
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -140,8 +229,9 @@ const Goals = () => {
   const progressPercent = totalGoals ? Math.round((completedGoals / totalGoals) * 100) : 0
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-24 md:pb-6 font-sans">
-      <header className="sticky top-0 z-20 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
+    <div className="relative min-h-screen bg-white pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
+      <MuseumBackground />
+      <header className="sticky top-0 z-30 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
           <div>
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#8a8178]">
@@ -159,7 +249,7 @@ const Goals = () => {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
+      <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
         <div className="space-y-5">
           <section className="relative overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-5 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:p-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />

@@ -41,8 +41,11 @@ const Home = () => {
     totalMinutes,
     booksFinished,
     goalsCompleted,
-    currentReading,
+    currentBooks,
+    statsLoading,
+    booksLoading,
   } = useApp()
+  const currentReading = currentBooks[0]?.title
 
   return (
     <div className="relative min-h-screen bg-white pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
@@ -122,7 +125,7 @@ const Home = () => {
                         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
                       </svg>
                       <p className="mt-0.5 text-5xl font-serif text-white font-bold leading-none">
-                         {currentStreak}
+                         {statsLoading ? '...' : currentStreak}
                       </p>
                     </div>
                     <p className="mt-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-white/80 drop-shadow-sm">
@@ -140,17 +143,17 @@ const Home = () => {
                   <div className="relative z-10 flex-1 grid grid-cols-3 gap-2 sm:gap-6 divide-x divide-white/20">
                     <div className="flex flex-col items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 mb-2 drop-shadow-sm"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                      <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{goalsCompleted}</p>
+                      <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{statsLoading ? '...' : goalsCompleted}</p>
                       <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-[0.65rem] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/80 drop-shadow-sm text-center">Goals</p>
                     </div>
                     <div className="flex flex-col items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 mb-2 drop-shadow-sm"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M10 2h4"/><path d="M12 2v3"/></svg>
-                      <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{totalMinutes.toLocaleString()}</p>
+                      <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{statsLoading ? '...' : totalMinutes.toLocaleString()}</p>
                       <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-[0.65rem] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/80 drop-shadow-sm text-center">Mins</p>
                     </div>
                     <div className="flex flex-col items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 mb-2 drop-shadow-sm"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                      <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{booksFinished}</p>
+                      <p className="text-3xl sm:text-4xl font-serif text-white font-bold leading-none">{statsLoading ? '...' : booksFinished}</p>
                       <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-[0.65rem] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/80 drop-shadow-sm text-center">Books</p>
                     </div>
                   </div>
@@ -172,8 +175,15 @@ const Home = () => {
                    />
                 </div>
                 <h3 className="mt-1 line-clamp-2 text-2xl font-serif font-medium text-[#2b2724]">
-                  {currentReading || 'No book yet'}
+                  {booksLoading ? 'Loading...' : currentReading || 'No book yet'}
                 </h3>
+                <p className="mt-2 text-sm leading-6 text-[#6b645d]">
+                  {booksLoading
+                    ? 'Checking your current books.'
+                    : currentReading
+                      ? `${currentBooks.length} active ${currentBooks.length === 1 ? 'book' : 'books'} in progress.`
+                      : 'Your current book will show up here after you log a session.'}
+                </p>
               </div>
 
               <div className="mt-4 flex flex-1 items-center justify-center p-2">

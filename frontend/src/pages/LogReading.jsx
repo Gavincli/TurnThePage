@@ -1,44 +1,17 @@
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 import BottomNav from '../components/BottomNav'
 import MuseumBackground from '../components/MuseumBackground'
+import { useApp } from '../context/AppContext'
 
-const API_BASE = 'http://localhost:3001'
-const TEST_USER_ID = '11111111-1111-1111-1111-111111111111'
-const BOOKS_STORAGE_KEY = 'turn-the-page-books'
-const BOOK_READS_STORAGE_KEY = 'turn-the-page-book-reads'
+const API_BASE = 'http://localhost:4000'
 
 const getToday = () => new Date().toISOString().slice(0, 10)
 
-const loadBooks = () => {
-  try {
-    const raw = localStorage.getItem(BOOKS_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-const saveBooks = (books) => {
-  localStorage.setItem(BOOKS_STORAGE_KEY, JSON.stringify(books))
-}
-
-const loadBookReads = () => {
-  try {
-    const raw = localStorage.getItem(BOOK_READS_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-const saveBookReads = (reads) => {
-  localStorage.setItem(BOOK_READS_STORAGE_KEY, JSON.stringify(reads))
-}
-
 const formatDate = (dateStr) => {
+  if (!dateStr) return '—'
   const d = new Date(dateStr)
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
@@ -51,6 +24,7 @@ const formatMinutes = (mins) => {
 }
 
 const LogReading = () => {
+  const { userId, syncAfterSession } = useApp()
   const [minutes, setMinutes] = useState('')
   const [pages, setPages] = useState('')
   const [sessionDate, setSessionDate] = useState(getToday())
@@ -64,11 +38,61 @@ const LogReading = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [books, setBooks] = useState([])
   const [bookReads, setBookReads] = useState([])
+  const [isBooksLoading, setIsBooksLoading] = useState(true)
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true)
+  const [successSummary, setSuccessSummary] = useState(null)
+
+  const availableBooks = useMemo(
+    () => books.filter((book) => !book.isFinished),
+    [books],
+  )
+
+  const loadBooks = useCallback(async () => {
+    setIsBooksLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/books?userId=${userId}`)
+      if (!res.ok) {
+        throw new Error(`Books fetch failed: ${res.status}`)
+      }
+
+      const data = await res.json()
+      setBooks(data.books ?? [])
+    } catch (err) {
+      console.error('Failed to load books for Log Reading.', err)
+      setBooks([])
+    } finally {
+      setIsBooksLoading(false)
+    }
+  }, [userId])
+
+  const loadBookHistory = useCallback(async () => {
+    setIsHistoryLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/books/history?userId=${userId}`)
+      if (!res.ok) {
+        throw new Error(`Book history fetch failed: ${res.status}`)
+      }
+
+      const data = await res.json()
+      setBookReads((data.books ?? []).filter((book) => book.totalMinutes > 0 || book.totalPagesRead > 0))
+    } catch (err) {
+      console.error('Failed to load book history.', err)
+      setBookReads([])
+    } finally {
+      setIsHistoryLoading(false)
+    }
+  }, [userId])
 
   useEffect(() => {
-    setBooks(loadBooks())
-    setBookReads(loadBookReads())
-  }, [])
+    loadBooks()
+    loadBookHistory()
+  }, [loadBookHistory, loadBooks])
+
+  useEffect(() => {
+    if (selectedBookId && !availableBooks.some((book) => book.bookId === selectedBookId)) {
+      setSelectedBookId('')
+    }
+  }, [availableBooks, selectedBookId])
 
   useEffect(() => {
     document.title = 'Log Reading | Turn the Page'
@@ -104,7 +128,7 @@ const LogReading = () => {
     }
 
     if (bookMode === 'existing') {
-      if (books.length === 0) {
+      if (availableBooks.length === 0) {
         next.book = 'No books yet. Add a new book below.'
       } else if (!selectedBookId) {
         next.book = 'Please select a book.'
@@ -140,51 +164,40 @@ const LogReading = () => {
 
     try {
       let bookId = null
+      let bookTitle = ''
 
-      let bookTotalPagesForReads = null
       if (bookMode === 'existing' && selectedBookId) {
         bookId = selectedBookId
-        bookTotalPagesForReads = books.find((b) => b.id === bookId)?.totalPages ?? null
+        bookTitle = availableBooks.find((book) => book.bookId === bookId)?.title ?? ''
       } else if (bookMode === 'new' && newBookTitle.trim()) {
-        const title = newBookTitle.trim()
-        const existing = books.find(
-          (b) => b.title.toLowerCase() === title.toLowerCase()
-        )
-        if (existing) {
-          bookId = existing.id
-          if (newBookTotalPages.trim()) {
-            const total = parseInt(newBookTotalPages, 10)
-            if (!Number.isNaN(total) && total > 0) {
-              const updated = books.map((b) =>
-                b.id === existing.id ? { ...b, totalPages: total } : b
-              )
-              saveBooks(updated)
-              setBooks(updated)
-              bookTotalPagesForReads = total
-            } else {
-              bookTotalPagesForReads = existing.totalPages ?? null
-            }
-          } else {
-            bookTotalPagesForReads = existing.totalPages ?? null
-          }
-        } else {
-          const totalPagesVal = newBookTotalPages.trim()
-            ? parseInt(newBookTotalPages, 10)
-            : null
-          const totalPages = totalPagesVal && !Number.isNaN(totalPagesVal) && totalPagesVal > 0
-            ? totalPagesVal
-            : null
-          const newBook = { id: crypto.randomUUID(), title, totalPages }
-          const updated = [...books, newBook]
-          setBooks(updated)
-          saveBooks(updated)
-          bookId = newBook.id
-          bookTotalPagesForReads = totalPages
+        bookTitle = newBookTitle.trim()
+        const totalPages = newBookTotalPages.trim()
+          ? parseInt(newBookTotalPages, 10)
+          : undefined
+
+        const bookRes = await fetch(`${API_BASE}/api/books`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            title: bookTitle,
+            totalPages: totalPages || undefined,
+          }),
+        })
+
+        const bookData = await bookRes.json()
+
+        if (!bookRes.ok) {
+          setErrors({ submit: bookData.error || 'Failed to save the book. Please try again.' })
+          return
         }
+
+        bookId = bookData.book?.bookId
+        bookTitle = bookData.book?.title || bookTitle
       }
 
       const body = {
-        userId: TEST_USER_ID,
+        userId,
         minutesRead: parseInt(minutes, 10),
         sessionDate: sessionDate || getToday(),
         bookId: bookId || undefined,
@@ -205,7 +218,17 @@ const LogReading = () => {
         return
       }
 
+      await Promise.all([
+        loadBooks(),
+        loadBookHistory(),
+        syncAfterSession(data),
+      ])
+
       setSubmitSuccess(true)
+      setSuccessSummary({
+        bookTitle,
+        newlyCompleted: data.newlyCompleted ?? [],
+      })
       setMinutes('')
       setPages('')
       setSessionDate(getToday())
@@ -213,36 +236,7 @@ const LogReading = () => {
       setNewBookTitle('')
       setNewBookTotalPages('')
       setFinishedBook(false)
-
-      if (bookId) {
-        const title = bookMode === 'existing'
-          ? books.find((b) => b.id === bookId)?.title ?? 'Unknown'
-          : newBookTitle.trim()
-        const date = sessionDate || getToday()
-        const mins = parseInt(minutes, 10)
-        const pgs = pages.trim() ? parseInt(pages, 10) : 0
-        const reads = loadBookReads()
-        const existing = reads.find((r) => r.bookId === bookId)
-        const session = { date, minutes: mins, pages: pgs }
-        if (existing) {
-          existing.sessions.push(session)
-          if (finishedBook) existing.finishedAt = date
-          if (bookTotalPagesForReads != null && existing.bookPageCount == null) {
-            existing.bookPageCount = bookTotalPagesForReads
-          }
-        } else {
-          reads.push({
-            bookId,
-            title,
-            bookPageCount: bookTotalPagesForReads,
-            sessions: [session],
-            finishedAt: finishedBook ? date : null,
-          })
-        }
-        saveBookReads(reads)
-        setBookReads(reads)
-      }
-    } catch (err) {
+    } catch {
       setErrors({
         submit: 'Could not reach the server. Make sure the backend is running.',
       })
@@ -279,11 +273,28 @@ const LogReading = () => {
               Reading logged!
             </h2>
             <p className="mt-2 text-sm text-[#6b645d]">
-              Your progress has been saved.
+              {successSummary?.bookTitle
+                ? `${successSummary.bookTitle} has been updated.`
+                : 'Your progress has been saved.'}
             </p>
+            {successSummary?.newlyCompleted?.length > 0 && (
+              <div className="mt-4 rounded-[1.25rem] border border-[#e8e4db] bg-[#faf8f4] px-4 py-4 text-left">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8a8178]">
+                  Goal completed
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-[#4a4542]">
+                  {successSummary.newlyCompleted.map((goal) => (
+                    <li key={goal.templateId}>{goal.title}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <button
               type="button"
-              onClick={() => setSubmitSuccess(false)}
+              onClick={() => {
+                setSubmitSuccess(false)
+                setSuccessSummary(null)
+              }}
               className="mt-6 w-full rounded-[1.6rem] bg-gradient-to-r from-[#8c6b4a] to-[#73583d] px-5 py-4 text-base font-medium font-serif tracking-wide text-white shadow-lg shadow-[#8c6b4a]/20 transition hover:scale-[1.01]"
             >
               Log another session
@@ -328,25 +339,6 @@ const LogReading = () => {
 
       <main id="main-content" role="main" className="mx-auto w-full max-w-7xl px-3 pt-4 sm:px-6 sm:pt-6 lg:px-10">
         <div className="flex flex-col gap-4 sm:gap-5">
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-            <div className="rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
-              <h3 className="mt-2 text-lg font-serif font-medium tracking-tight text-[#2b2724] sm:text-xl">
-                Why log?
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-[#6b645d]">
-                It shows your hard work and helps you stay consistent.
-              </p>
-            </div>
-            <div className="rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
-              <h3 className="mt-2 text-lg font-serif font-medium tracking-tight text-[#2b2724] sm:text-xl">
-                Remember
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-[#6b645d]">
-                Any reading is good reading.
-              </p>
-            </div>
-          </section>
-
           <section className="relative overflow-hidden rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
             <div
@@ -562,14 +554,17 @@ const LogReading = () => {
                           : 'border-[#dcd7d0] bg-white/60 focus:border-[#8c6b4a]'
                       }`}
                       aria-invalid={!!errors.book}
+                      disabled={isBooksLoading}
                     >
                       <option value="">
-                        {books.length === 0
+                        {isBooksLoading
+                          ? 'Loading books...'
+                          : availableBooks.length === 0
                           ? 'No books yet — add one below'
                           : 'Choose a book...'}
                       </option>
-                      {books.map((b) => (
-                        <option key={b.id} value={b.id}>
+                      {availableBooks.map((b) => (
+                        <option key={b.bookId} value={b.bookId}>
                           {b.title}
                         </option>
                       ))}
@@ -666,17 +661,31 @@ const LogReading = () => {
             </div>
           </section>
 
-          <section className="relative z-10 overflow-x-auto rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
-            <h2 className="text-lg font-serif font-medium tracking-tight text-[#2b2724] sm:text-xl">
+          <section
+            aria-labelledby="books-read-heading"
+            aria-describedby="books-read-description"
+            className="relative isolate overflow-hidden rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.35),transparent_55%)]" />
+            <div className="relative z-10">
+            <h2 id="books-read-heading" className="text-lg font-serif font-medium tracking-tight text-[#2b2724] sm:text-xl">
               Books you&apos;ve read
             </h2>
-            <p className="mt-2 text-sm text-[#6b645d]">
+            <p id="books-read-description" className="mt-2 max-w-2xl text-sm leading-6 text-[#5f5851]">
               Books you&apos;ve logged reading for, with total time and date range.
             </p>
-            {bookReads.length === 0 ? (
-              <p className="mt-4 text-sm text-[#8a8178] italic">
-                No books logged yet. Log a reading session with a book to see it here.
-              </p>
+            {isHistoryLoading ? (
+              <div className="mt-4 rounded-[1.25rem] border border-[#e8e4db] bg-[#faf8f4] px-4 py-4 sm:px-5">
+                <p className="text-sm leading-6 text-[#5f5851]">
+                  Loading your logged books...
+                </p>
+              </div>
+            ) : bookReads.length === 0 ? (
+              <div className="mt-4 rounded-[1.25rem] border border-[#e8e4db] bg-[#faf8f4] px-4 py-4 sm:px-5">
+                <p className="text-sm leading-6 text-[#5f5851]">
+                  No books logged yet. Log a reading session with a book to see it here.
+                </p>
+              </div>
             ) : (
               <div className="mt-4 w-full">
                 {/* Table header - hidden on mobile, shown from md up */}
@@ -688,45 +697,36 @@ const LogReading = () => {
                   <span className="text-center font-serif text-xs font-semibold uppercase tracking-widest text-[#8a8178] lg:text-base">Start date</span>
                   <span className="text-center font-serif text-xs font-semibold uppercase tracking-widest text-[#8a8178] lg:text-base">End date</span>
                 </div>
-                <ul className="w-full space-y-3" role="list">
+                <ul className="w-full space-y-3" role="list" aria-describedby="books-read-description">
                 {bookReads
-                  .map((r) => {
-                    const dates = r.sessions.map((s) => s.date)
-                    const startDate = dates.reduce((a, b) => (a < b ? a : b))
-                    const endDate = r.finishedAt ?? dates.reduce((a, b) => (a > b ? a : b))
-                    const totalMinutes = r.sessions.reduce((sum, s) => sum + s.minutes, 0)
-                    const pagesRead = r.sessions.reduce((sum, s) => sum + (s.pages || 0), 0)
-                    const bookPageCount = r.bookPageCount ?? null
-                    return { ...r, startDate, endDate, totalMinutes, pagesRead, bookPageCount }
-                  })
                   .sort((a, b) => (b.endDate > a.endDate ? 1 : -1))
                   .map((r) => (
                     <li
                       key={r.bookId}
-                      className="group grid w-full grid-cols-1 gap-3 rounded-xl border border-[#e8e4db] border-l-4 border-l-[#8c6b4a]/30 bg-white px-4 py-4 shadow-sm transition-all hover:border-l-[#8c6b4a] hover:border-[#dcd7d0] hover:shadow-md md:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr_1fr_1fr] md:items-center md:gap-2 md:px-5 lg:gap-4"
+                      className="group grid w-full grid-cols-1 gap-3 rounded-[1.25rem] border border-[#e8e4db] border-l-4 border-l-[#8c6b4a]/30 bg-[#fcfbf8] px-4 py-4 shadow-sm transition-all hover:border-l-[#8c6b4a] hover:border-[#dcd7d0] hover:shadow-md md:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr_1fr_1fr] md:items-center md:gap-2 md:px-5 lg:gap-4"
                     >
                       <span className="min-w-0 font-serif text-base font-semibold tracking-tight text-[#2b2724] md:text-lg lg:text-xl">
                         {r.title}
                       </span>
                       {/* Mobile: label-value grid. Desktop: values only in table cells */}
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3 md:contents">
-                        <span className="text-xs text-[#8a8178] md:hidden">Total time</span>
+                        <span className="text-xs font-medium text-[#6b645d] md:hidden">Total time</span>
                         <span className="tabular-nums font-medium text-[#8c6b4a] md:text-center md:text-lg">
                           {formatMinutes(r.totalMinutes)}
                         </span>
-                        <span className="text-xs text-[#8a8178] md:hidden">Pages read</span>
+                        <span className="text-xs font-medium text-[#6b645d] md:hidden">Pages read</span>
                         <span className="tabular-nums text-[#6b645d] md:text-center md:text-base">
-                          {r.pagesRead > 0 ? r.pagesRead : '—'}
+                          {r.totalPagesRead > 0 ? r.totalPagesRead : '—'}
                         </span>
-                        <span className="text-xs text-[#8a8178] md:hidden">Book pages</span>
+                        <span className="text-xs font-medium text-[#6b645d] md:hidden">Book pages</span>
                         <span className="tabular-nums text-[#6b645d] md:text-center md:text-base">
-                          {r.bookPageCount != null ? r.bookPageCount : '—'}
+                          {r.totalPages != null ? r.totalPages : '—'}
                         </span>
-                        <span className="text-xs text-[#8a8178] md:hidden">Start date</span>
+                        <span className="text-xs font-medium text-[#6b645d] md:hidden">Start date</span>
                         <span className="tabular-nums text-[#6b645d] md:text-center md:text-base">
                           {formatDate(r.startDate)}
                         </span>
-                        <span className="text-xs text-[#8a8178] md:hidden">End date</span>
+                        <span className="text-xs font-medium text-[#6b645d] md:hidden">End date</span>
                         <span className="tabular-nums text-[#6b645d] md:text-center md:text-base">
                           {formatDate(r.endDate)}
                         </span>
@@ -736,6 +736,7 @@ const LogReading = () => {
                 </ul>
               </div>
             )}
+            </div>
           </section>
         </div>
       </main>

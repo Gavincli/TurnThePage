@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import HamburgerMenu from '../components/HamburgerMenu'
@@ -50,16 +50,11 @@ const avatarOptions = [
   },
 ]
 
+const getInitialAvatar = () => localStorage.getItem('ttp_avatar') || 'cat'
+
 const AvatarSelect = () => {
   const navigate = useNavigate()
-  const [selectedAvatar, setSelectedAvatar] = useState('cat')
-
-  useEffect(() => {
-    const savedAvatar = localStorage.getItem('ttp_avatar')
-    if (savedAvatar) {
-      setSelectedAvatar(savedAvatar)
-    }
-  }, [])
+  const [selectedAvatar, setSelectedAvatar] = useState(getInitialAvatar)
 
   const handleSave = () => {
     localStorage.setItem('ttp_avatar', selectedAvatar)

@@ -1,3 +1,59 @@
+## Turn The Page
+
+Turn The Page is a reading tracker with a React frontend, an Express backend, and a PostgreSQL database. Sprint 2 moves the app from mostly local UI state to a real backend-backed reading flow for books, sessions, stats, and goals.
+
+## Tech Stack
+
+- React
+- Vite
+- Express
+- PostgreSQL
+
+## Project Structure
+
+```text
+TurnThePage
+|
+├── backend/   # Express API routes and database access
+├── db/        # SQL migrations and seed data
+├── frontend/  # React + Vite app
+└── scripts/   # Optional DB helper scripts
+```
+
+## Sprint 2 Vertical Slices
+
+Sprint 2 was delivered as 10 vertical slices so each feature could be implemented and tested end-to-end.
+
+1. `Log Reading: minutes/date save`
+- The Log Reading page saves a reading session with minutes and session date through the real backend.
+
+2. `Log Reading: pages read save`
+- Reading sessions can now optionally record `pagesRead`, and that value is stored in PostgreSQL.
+
+3. `Log Reading: create new backend book`
+- Users can create a book from the Log Reading form, including optional total pages.
+
+4. `Log Reading: select existing backend book`
+- Users can pick an existing unfinished book from the backend instead of relying on local-only state.
+
+5. `Log Reading: finish book flow`
+- A session can mark a selected book as finished, which updates both book history and goal progress.
+
+6. `Home: stats dashboard from backend`
+- Home reads real streak, total minutes, and finished-book counts from `/api/stats`.
+
+7. `Home: current books from backend`
+- Home reads current unfinished books from `/api/books/current` and shows a clean empty state when none exist.
+
+8. `Goals: render real grouped goals`
+- Goals are loaded from the backend and grouped by `daily`, `weekly`, and `monthly` periods.
+
+9. `Goals: refresh after logging`
+- After a successful reading session, the frontend refreshes stats, books, and goals so Home and Goals stay in sync.
+
+10. `Log Reading + Goals: completed-goal feedback from backend results`
+- The session API returns `newlyCompleted` goals, and the frontend shows success feedback after logging.
+
 ## Local Setup
 
 ### 1. Clone the repository
@@ -13,7 +69,7 @@ cd TurnThePage
 npm run install:all
 ```
 
-This installs dependencies for root and frontend.
+This installs root dependencies and frontend dependencies.
 
 ### 3. Configure environment variables
 
@@ -24,10 +80,10 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/turn_the_page
 PORT=4000
 ```
 
-Important:
-- Replace `postgres:postgres` with your PostgreSQL username/password
-- If you have no password, use `DATABASE_URL=postgresql://postgres@localhost:5432/turn_the_page`
-- The file must be named exactly `.env` (it is gitignored)
+Notes:
+- Replace `postgres:postgres` with your actual PostgreSQL username/password.
+- If you have no password, `DATABASE_URL=postgresql://postgres@localhost:5432/turn_the_page` may work locally.
+- The file must be named exactly `.env`.
 
 ### 4. Create the database
 
@@ -35,114 +91,116 @@ Important:
 psql -U postgres -c "CREATE DATABASE turn_the_page;"
 ```
 
-Replace `postgres` with your PostgreSQL username if different.
+Replace `postgres` with your local PostgreSQL username if needed.
 
-### 5. Run database setup (cross-platform, no scripts required)
+### 5. Run the database migrations
 
-Use `psql` directly so setup works the same on macOS, Linux, and Windows.
+You can use either the helper script or run `psql` directly.
 
-Run these commands in the project root:
+Helper script:
+
+```bash
+npm run db:migrate
+```
+
+Manual `psql` sequence:
 
 ```bash
 psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/001_initial_schema.sql
 psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/002_seed_data.sql
+psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/004_books.sql
+psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/005_goal_templates_period.sql
+psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/006_books_total_pages.sql
+psql "postgresql://postgres:postgres@localhost:5432/turn_the_page" -v ON_ERROR_STOP=1 -f db/migrations/007_reading_sessions_pages_read.sql
 ```
 
-Notes:
-- Replace the connection string with your own Postgres username/password/host/port/db name.
-- If your password contains special characters, URL-encode them in the connection string.
-- `002_seed_data.sql` is the consolidated migration and already includes the goals/sessions/frequency changes.
-- Migrations are idempotent (`IF NOT EXISTS` + `ON CONFLICT`) and safe to re-run.
-
-Optional (still available if your shell supports it):
+Optional helpers:
 - `npm run db:migrate`
 - `npm run db:seed`
 - `npm run db:reset`
 
-### 6. Start the frontend
+## Run the App
 
-```bash
-npm --prefix frontend run dev
-```
-
-### 7. Start the backend API
-
-The backend API runs separately from the frontend and exposes goal endpoints.
+Start the backend:
 
 ```bash
 npm run backend
 ```
 
-- Health check (sanity test):
+Start the frontend in a second terminal:
 
-  ```bash
-  curl http://localhost:4000/health
-  ```
-
-- Fetch goals for the seeded test user:
-
-  ```bash
-  curl "http://localhost:4000/api/goals?userId=11111111-1111-1111-1111-111111111111"
-  ```
-
-- Log a reading session (no frontend required yet):
-
-  ```bash
-  curl -X POST http://localhost:4000/api/sessions \
-    -H "Content-Type: application/json" \
-    -d '{
-      "userId": "11111111-1111-1111-1111-111111111111",
-      "minutesRead": 15,
-      "sessionDate": "2026-03-18"
-    }'
-  ```
-
-This endpoint is designed to be testable with curl/Postman first. A future Log Reading page will call it from the frontend.
-
-## Project Structure
-
-```text
-TurnThePage
-|
-├── db/
-│   └── migrations/   # SQL migrations (schema + seed)
-├── frontend/         # React + Vite frontend
-├── backend/          # Express API + Postgres (goals and sessions)
-└── scripts/          # Optional DB helper scripts used by npm commands
+```bash
+npm --prefix frontend run dev
 ```
 
-## Tech Stack
+Default local URLs:
+- Frontend: `http://127.0.0.1:5173`
+- Backend: `http://localhost:4000`
 
-- React
-- Vite
-- JavaScript
-- PostgreSQL
+## API Smoke Checks
 
+Health check:
 
-User Requirements (EARS Format)
-===============================
+```bash
+curl http://localhost:4000/health
+```
 
-Ubiquitous Requirements
------------------------
-1. The system shall present the frontend interface content in English.
-2. The system shall allow users to view reading goals with a title, description, target, and progress.
-3. The system shall keep goal progress data in PostgreSQL and expose it through backend API endpoints.
-4. The system shall prevent client-side SQL injection by using parameterized database queries for goal and session operations.
+Fetch goals for the seeded demo user:
 
-Event-Driven Requirements
--------------------------
-5. When the user opens the Goals page, the system shall request and display the user’s goals and current progress.
-6. When the user submits a reading session (minutes read and date), the system shall record the session and recalculate progress for relevant goals.
-7. When a goal reaches its completion threshold, the system shall mark it as completed and return that completion state to the frontend.
-8. When newly completed goals are returned after a session submission, the system shall display completion feedback (message/celebration) to the user.
-9. When goals are rendered, the system shall display completed goals after active goals.
-10. When a goal is completed and progress exceeds target, the system shall display progress clamped to the goal target (for example, `10/10` rather than `30/10`).
-11. When the user activates the read-aloud control for goal text, the system shall use browser speech synthesis to read that text aloud.
+```bash
+curl "http://localhost:4000/api/goals?userId=11111111-1111-1111-1111-111111111111"
+```
 
-State-Driven Requirements
--------------------------
-12. While backend goal data is being fetched, the system shall keep the Goals view in a safe loading state without showing stale hardcoded progress.
-13. While no goals have been completed, the system shall display zero completed goals in the completion summary.
-14. While one or more goals are completed, the system shall show completed-goal counts and completed status consistently across the Goals view.
-15. While the dedicated Log Reading page does not exist, the system shall support session logging through the current inline Goals-page flow.
+Create a book:
+
+```bash
+curl -X POST http://localhost:4000/api/books \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "11111111-1111-1111-1111-111111111111",
+    "title": "Sprint 2 Smoke Book",
+    "totalPages": 222
+  }'
+```
+
+Log a reading session:
+
+```bash
+curl -X POST http://localhost:4000/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "11111111-1111-1111-1111-111111111111",
+    "minutesRead": 15,
+    "pagesRead": 8,
+    "sessionDate": "2026-03-25"
+  }'
+```
+
+Fetch current books:
+
+```bash
+curl "http://localhost:4000/api/books/current?userId=11111111-1111-1111-1111-111111111111"
+```
+
+## Manual Browser Test Flow
+
+Once frontend and backend are both running:
+
+1. Open `http://127.0.0.1:5173/`
+- Check that Home shows real stats and a sensible current-books section.
+
+2. Open `http://127.0.0.1:5173/goals`
+- Check `Daily`, `Weekly`, and `Monthly` tabs.
+- Confirm goals load from the backend.
+
+3. Open `http://127.0.0.1:5173/log-reading`
+- Test `Add new book` with minutes, pages, date, title, and total pages.
+- Then test `Select existing` and mark the book finished.
+
+4. Return to Home and Goals
+- Confirm stats, books, and goal progress refresh after logging.
+
+## Sprint 2 Database Notes
+
+See `sprint2.md` for a focused explanation of the Sprint 2 schema changes and how book/session storage evolved.
   

@@ -21,5 +21,7 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_initial_schema.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_seed_data.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_books.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/005_goal_templates_period.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/006_books_total_pages.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/007_reading_sessions_pages_read.sql
 
 echo "Reset complete: schema dropped, recreated, and seeded."

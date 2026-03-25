@@ -1,12 +1,42 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 
 const AppContext = createContext()
 
 const USER_ID = '11111111-1111-1111-1111-111111111111'
-const API = 'http://localhost:3001'
+const API = 'http://localhost:4000'
+
+const GOAL_ICONS = {
+  daily: '☀️',
+  weekly: '🗓️',
+  monthly: '🌙',
+}
+
+const mapGoal = (goal, index) => {
+  const target = Number(goal.target ?? 0)
+  const current = Number(goal.progress ?? 0)
+  const period = goal.period || 'daily'
+
+  return {
+    id: goal.templateId || `goal-${index + 1}`,
+    templateId: goal.templateId,
+    name: goal.title,
+    description: goal.description,
+    current,
+    target,
+    completed: Boolean(goal.isCompleted),
+    icon: GOAL_ICONS[period] || '📖',
+    period,
+    percentComplete: Number(goal.percentComplete) || (target > 0 ? (current / target) * 100 : 0),
+  }
+}
 
 export const AppProvider = ({ children }) => {
-  // --- Stats (streak, minutes, books) ---
   const [currentStreak, setCurrentStreak] = useState(0)
   const [todayMinutes, setTodayMinutes] = useState(0)
   const [weekMinutes, setWeekMinutes] = useState(0)
@@ -14,240 +44,127 @@ export const AppProvider = ({ children }) => {
   const [booksFinished, setBooksFinished] = useState(0)
   const [statsLoading, setStatsLoading] = useState(true)
 
-  // --- Currently reading books ---
   const [currentBooks, setCurrentBooks] = useState([])
   const [booksLoading, setBooksLoading] = useState(true)
 
-  // --- Goals ---
   const [goalsCompleted, setGoalsCompleted] = useState(0)
+  const [goalProgress, setGoalProgress] = useState([])
+  const [goalsLoading, setGoalsLoading] = useState(true)
 
-  const sampleGoals = [
-    {
-      id: 1,
-      name: 'Read 10 minutes',
-      description: 'Complete one focused reading session',
-      current: 4,
-      target: 10,
-      completed: false,
-      icon: '📖',
-      period: 'daily',
-    },
-    {
-      id: 2,
-      name: 'Read 30 minutes',
-      description: 'Build your reading habit for today',
-      current: 10,
-      target: 30,
-      completed: false,
-      icon: '⏱️',
-      period: 'daily',
-    },
-    {
-      id: 3,
-      name: 'Read 5 days this week',
-      description: 'Stay consistent during the week',
-      current: 2,
-      target: 5,
-      completed: false,
-      icon: '🗓️',
-      period: 'weekly',
-    },
-    {
-      id: 4,
-      name: 'Read 120 minutes this week',
-      description: 'Accumulate reading time this week',
-      current: 45,
-      target: 120,
-      completed: false,
-      icon: '📚',
-      period: 'weekly',
-    },
-    {
-      id: 5,
-      name: 'Finish 1 book this month',
-      description: 'Reach one monthly reading milestone',
-      current: 0,
-      target: 1,
-      completed: false,
-      icon: '🌙',
-      period: 'monthly',
-    },
-    {
-      id: 6,
-      name: 'Read 600 minutes this month',
-      description: 'Grow your reading stamina over time',
-      current: 140,
-      target: 600,
-      completed: false,
-      icon: '✨',
-      period: 'monthly',
-    },
-  ]
+  const [newlyCompletedGoals, setNewlyCompletedGoals] = useState([])
 
-  const [goalProgress, setGoalProgress] = useState(sampleGoals)
-
-  // --- Fetch stats from /api/stats ---
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const res = await fetch(`${API}/api/stats?userId=${USER_ID}`)
-        if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`)
-        const data = await res.json()
-        setCurrentStreak(data.streak ?? 0)
-        setTodayMinutes(data.todayMinutes ?? 0)
-        setWeekMinutes(data.weekMinutes ?? 0)
-        setTotalMinutes(data.totalMinutes ?? 0)
-        setBooksFinished(data.booksFinished ?? 0)
-      } catch (err) {
-        console.error('Failed to load stats from backend, using defaults.', err)
-        // Defaults remain 0 — cleaner than showing fake numbers
-      } finally {
-        setStatsLoading(false)
-      }
-    }
-
-    loadStats()
+  const applyGoals = useCallback((goals) => {
+    const mapped = (goals || []).map(mapGoal)
+    setGoalProgress(mapped)
+    setGoalsCompleted(mapped.filter((goal) => goal.completed).length)
+    return mapped
   }, [])
 
-  // --- Fetch current (unfinished) books from /api/books/current ---
-  useEffect(() => {
-    const loadBooks = async () => {
-      try {
-        const res = await fetch(`${API}/api/books/current?userId=${USER_ID}`)
-        if (!res.ok) throw new Error(`Books fetch failed: ${res.status}`)
-        const data = await res.json()
-        // Only unfinished books — backend already filters is_finished = false
-        setCurrentBooks(data.books ?? [])
-      } catch (err) {
-        console.error('Failed to load current books from backend.', err)
-        setCurrentBooks([])
-      } finally {
-        setBooksLoading(false)
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/stats?userId=${USER_ID}`)
+      if (!res.ok) {
+        throw new Error(`Stats fetch failed: ${res.status}`)
       }
-    }
 
-    loadBooks()
+      const data = await res.json()
+      setCurrentStreak(data.streak ?? 0)
+      setTodayMinutes(data.todayMinutes ?? 0)
+      setWeekMinutes(data.weekMinutes ?? 0)
+      setTotalMinutes(data.totalMinutes ?? 0)
+      setBooksFinished(data.booksFinished ?? 0)
+    } catch (err) {
+      console.error('Failed to load stats from backend.', err)
+      setCurrentStreak(0)
+      setTodayMinutes(0)
+      setWeekMinutes(0)
+      setTotalMinutes(0)
+      setBooksFinished(0)
+    } finally {
+      setStatsLoading(false)
+    }
   }, [])
 
-  // --- Fetch goals from /api/goals ---
-  useEffect(() => {
-    const loadGoals = async () => {
-      try {
-        const res = await fetch(`${API}/api/goals?userId=${USER_ID}`)
-        const data = await res.json()
-        const goals = data.goals || []
-
-        if (!goals.length) {
-          setGoalProgress(sampleGoals)
-          setGoalsCompleted(sampleGoals.filter((g) => g.completed).length)
-          return
-        }
-
-        const mapped = goals.map((g, index) => ({
-          id: g.id ?? index + 1,
-          name: g.title,
-          description: g.description,
-          current: g.progress,
-          target: g.target,
-          completed: g.isCompleted,
-          icon: g.icon || '📖',
-          period: g.period || 'daily',
-        }))
-
-        setGoalProgress(mapped)
-        setGoalsCompleted(mapped.filter((g) => g.completed).length)
-      } catch (err) {
-        console.error('Failed to load goals from backend, using sample goals instead.', err)
-        setGoalProgress(sampleGoals)
-        setGoalsCompleted(sampleGoals.filter((g) => g.completed).length)
+  const loadCurrentBooks = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/books/current?userId=${USER_ID}`)
+      if (!res.ok) {
+        throw new Error(`Books fetch failed: ${res.status}`)
       }
-    }
 
-    // Defer goals fetch so it doesn't compete with initial render (helps FCP/LCP)
-    const usedIdle = typeof requestIdleCallback !== 'undefined'
-    const id = usedIdle
-      ? requestIdleCallback(() => loadGoals(), { timeout: 2000 })
-      : setTimeout(loadGoals, 0)
-    return () => (usedIdle ? cancelIdleCallback(id) : clearTimeout(id))
+      const data = await res.json()
+      setCurrentBooks(data.books ?? [])
+    } catch (err) {
+      console.error('Failed to load current books from backend.', err)
+      setCurrentBooks([])
+    } finally {
+      setBooksLoading(false)
+    }
   }, [])
 
-  const undoGoalCompletion = (goalId) => {
-    setGoalProgress((prev) => {
-      const updated = prev.map((g) => {
-        if (g.id === goalId) {
-          // Revert completely to target - 1 so it isn't still instantly completed
-          const safeCurrent = Math.max(0, g.target - 1)
-          return { ...g, current: safeCurrent, completed: false }
-        }
-        return g
-      })
-      setGoalsCompleted(updated.filter((g) => g.completed).length)
-      return updated
-    })
-  }
+  const loadGoals = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/goals?userId=${USER_ID}`)
+      if (!res.ok) {
+        throw new Error(`Goals fetch failed: ${res.status}`)
+      }
 
-  const deleteGoal = (goalId) => {
-    setGoalProgress((prev) => {
-      const updated = prev.filter((g) => g.id !== goalId)
-      setGoalsCompleted(updated.filter((g) => g.completed).length)
-      return updated
-    })
-  }
+      const data = await res.json()
+      applyGoals(data.goals ?? [])
+    } catch (err) {
+      console.error('Failed to load goals from backend.', err)
+      applyGoals([])
+    } finally {
+      setGoalsLoading(false)
+    }
+  }, [applyGoals])
 
-  const updateGoalProgress = (goalId, newCurrent) => {
-    setGoalProgress((prev) => {
-      const updated = prev.map((g) => {
-        if (g.id === goalId) {
-          const clamped = Math.max(0, Math.min(newCurrent, g.target))
-          const isNowCompleted = clamped >= g.target
-          return { ...g, current: clamped, completed: isNowCompleted }
-        }
-        return g
-      })
-      setGoalsCompleted(updated.filter((g) => g.completed).length)
-      return updated
-    })
-  }
+  const refreshAppData = useCallback(async () => {
+    await Promise.all([loadStats(), loadCurrentBooks(), loadGoals()])
+  }, [loadCurrentBooks, loadGoals, loadStats])
 
-  const markGoalCompleted = (goalId) => {
-    setGoalProgress((prev) => {
-      const updated = prev.map((g) => {
-        if (g.id === goalId) {
-          return { ...g, current: g.target, completed: true }
-        }
-        return g
-      })
-      setGoalsCompleted(updated.filter((g) => g.completed).length)
-      return updated
-    })
-  }
+  const syncAfterSession = useCallback(async (sessionResult) => {
+    if (sessionResult?.goals) {
+      applyGoals(sessionResult.goals)
+    } else {
+      await loadGoals()
+    }
+
+    setNewlyCompletedGoals(sessionResult?.newlyCompleted ?? [])
+    await Promise.all([loadStats(), loadCurrentBooks()])
+  }, [applyGoals, loadCurrentBooks, loadGoals, loadStats])
+
+  useEffect(() => {
+    refreshAppData()
+  }, [refreshAppData])
 
   const value = {
-    // Stats
+    apiBase: API,
+    userId: USER_ID,
     currentStreak,
     todayMinutes,
     weekMinutes,
     totalMinutes,
     booksFinished,
     statsLoading,
-    // Books
     currentBooks,
     booksLoading,
-    // Goals
     goalsCompleted,
     goalProgress,
-    setGoalProgress,
-    updateGoalProgress,
-    markGoalCompleted,
-    undoGoalCompletion,
-    deleteGoal,
-    // User
-    userId: USER_ID,
+    goalsLoading,
+    newlyCompletedGoals,
+    setNewlyCompletedGoals,
+    refreshAppData,
+    loadStats,
+    loadCurrentBooks,
+    loadGoals,
+    syncAfterSession,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => {
   const context = useContext(AppContext)
   if (context === undefined) {

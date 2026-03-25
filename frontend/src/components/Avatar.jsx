@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 const sizeMap = {
   xl: 'w-24 h-24 text-4xl',
@@ -25,15 +25,13 @@ const avatarEmojiMap = {
   star: '🌟',
 }
 
-const Avatar = ({ size = 'md' }) => {
-  const [selectedAvatar, setSelectedAvatar] = useState('cat')
+const getInitialAvatar = () => {
+  const savedAvatar = localStorage.getItem('ttp_avatar')
+  return savedAvatar && avatarEmojiMap[savedAvatar] ? savedAvatar : 'cat'
+}
 
-  useEffect(() => {
-    const savedAvatar = localStorage.getItem('ttp_avatar')
-    if (savedAvatar && avatarEmojiMap[savedAvatar]) {
-      setSelectedAvatar(savedAvatar)
-    }
-  }, [])
+const Avatar = ({ size = 'md' }) => {
+  const [selectedAvatar] = useState(getInitialAvatar)
 
   return (
     <div

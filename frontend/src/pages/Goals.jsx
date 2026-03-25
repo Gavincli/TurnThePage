@@ -1,21 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import confetti from 'canvas-confetti'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 import MuseumBackground from '../components/MuseumBackground'
-
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-const getGreeting = () => {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
-}
 
 const goalViews = [
   {
@@ -53,32 +41,8 @@ const resolveGoalPeriod = (goal) => {
 }
 
 const GoalRow = ({ goal }) => {
-  const { updateGoalProgress, markGoalCompleted, undoGoalCompletion, deleteGoal } = useApp()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const clampedCurrent = goal.completed && goal.target ? goal.target : goal.current
   const progress = goal.target ? Math.min((goal.current / goal.target) * 100, 100) : 0
-
-  const handleComplete = () => {
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#8c6b4a', '#5f8779', '#c4bbb2', '#e6ebe9']
-    })
-    markGoalCompleted(goal.id)
-  }
-
-  const handleIncrement = () => {
-    if (goal.current + 1 >= goal.target) {
-      handleComplete()
-    } else {
-      updateGoalProgress(goal.id, goal.current + 1)
-    }
-  }
-
-  const handleDecrement = () => {
-    updateGoalProgress(goal.id, goal.current - 1)
-  }
+  const clampedCurrent = Math.min(goal.current, goal.target || goal.current)
 
   return (
     <div
@@ -124,36 +88,7 @@ const GoalRow = ({ goal }) => {
                 {Math.round(progress)}%
               </p>
               {goal.completed && (
-                <div className="relative mt-2 flex items-center justify-end gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#47665b]">Done</p>
-                  <button
-                    onClick={() => setIsMenuOpen((prev) => !prev)}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e6ebe9] text-[#47665b] transition hover:bg-[#d5dedb] focus:outline-none"
-                    aria-label="Options"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                    </svg>
-                  </button>
-                  {isMenuOpen && (
-                    <div className="absolute right-0 top-8 z-30 w-32 origin-top-right rounded-xl border border-[#eeebe4] bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] select-none">
-                      <button 
-                        onClick={() => { undoGoalCompletion(goal.id); setIsMenuOpen(false); }} 
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#4a4542] hover:bg-[#f5efe6] transition"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
-                        Undo
-                      </button>
-                      <button 
-                        onClick={() => { deleteGoal(goal.id); setIsMenuOpen(false); }} 
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 transition"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6L17 21H7L5 6"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-[#47665b]">Done</p>
               )}
             </div>
           </div>
@@ -168,36 +103,9 @@ const GoalRow = ({ goal }) => {
           </div>
 
           {!goal.completed && (
-            <div className="mt-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleDecrement}
-                  disabled={goal.current <= 0}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eeebe4] bg-[#fcfbfa] pb-0.5 text-lg leading-none text-[#6b645d] shadow-sm transition hover:bg-[#f5efe6] disabled:opacity-50 disabled:hover:bg-[#fcfbfa]"
-                  aria-label="Decrease progress"
-                >
-                  &minus;
-                </button>
-                <div className="w-8 text-center font-serif text-[15px] font-medium text-[#2b2724] md:text-base">
-                  {clampedCurrent}
-                </div>
-                <button
-                  onClick={handleIncrement}
-                  disabled={goal.current >= goal.target}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eeebe4] bg-[#fcfbfa] pb-0.5 text-lg leading-none text-[#6b645d] shadow-sm transition hover:bg-[#f5efe6] disabled:opacity-50 disabled:hover:bg-[#fcfbfa]"
-                  aria-label="Increase progress"
-                >
-                  +
-                </button>
-              </div>
-
-              <button
-                onClick={handleComplete}
-                className="rounded-full bg-gradient-to-r from-[#8c6b4a] to-[#73583d] px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#ffffff] shadow-sm shadow-[#8c6b4a]/20 transition hover:scale-[1.02] hover:shadow-md"
-              >
-                Complete
-              </button>
-            </div>
+            <p className="mt-5 text-sm leading-6 text-[#6b645d]">
+              Log reading sessions to move this goal forward.
+            </p>
           )}
         </div>
       </div>
@@ -206,11 +114,8 @@ const GoalRow = ({ goal }) => {
 }
 
 const Goals = () => {
-  const { goalProgress } = useApp()
+  const { goalProgress, goalsLoading, newlyCompletedGoals } = useApp()
   const [selectedView, setSelectedView] = useState('daily')
-
-  const today = new Date()
-  const dateStr = `${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}`
 
   const activeView = useMemo(
     () => goalViews.find((view) => view.id === selectedView) || goalViews[0],
@@ -277,7 +182,20 @@ const Goals = () => {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-[1.4rem] bg-[#3f3b39]/50 backdrop-blur-md py-4 px-5 text-[#fcfbfa] shadow-lg border border-white/10 sm:py-5 sm:px-6 relative overflow-hidden">
+              {newlyCompletedGoals.length > 0 && (
+                <div className="mt-5 rounded-[1.2rem] border border-[#d8e1de] bg-[#f5faf8] px-4 py-4 text-[#47665b] shadow-sm">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#5f8779]">
+                    Newly completed
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm leading-6">
+                    {newlyCompletedGoals.map((goal) => (
+                      <li key={goal.templateId}>{goal.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="mt-6 rounded-[1.4rem] bg-[#3f3b39]/50 backdrop-blur-md p-5 text-[#fcfbfa] shadow-lg border border-white/10 sm:p-6 relative overflow-hidden">
                  <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[#f5efe6]/20 blur-2xl" />
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                   <div>
@@ -340,7 +258,13 @@ const Goals = () => {
               <ReadAloud text="Goals" size="xs" />
             </div>
 
-            {filteredGoals.length === 0 ? (
+            {goalsLoading ? (
+              <div className="rounded-[1.4rem] border border-[#eeebe4] bg-white px-8 py-10 text-center shadow-sm">
+                <p className="text-lg font-serif font-medium text-[#4a4542]">
+                  Loading goals...
+                </p>
+              </div>
+            ) : filteredGoals.length === 0 ? (
               <div className="rounded-[1.4rem] border border-[#eeebe4] bg-white px-8 py-10 text-center shadow-sm">
                 <img 
                   src="/open_watercolor_book.png" 

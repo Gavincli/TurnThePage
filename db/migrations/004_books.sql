@@ -19,8 +19,17 @@ CREATE INDEX IF NOT EXISTS idx_books_user_finished
 CREATE UNIQUE INDEX IF NOT EXISTS idx_books_user_title_ci
   ON books(user_id, LOWER(title));
 
-ALTER TABLE reading_sessions
-  ADD CONSTRAINT fk_reading_sessions_book
-  FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'fk_reading_sessions_book'
+  ) THEN
+    ALTER TABLE reading_sessions
+      ADD CONSTRAINT fk_reading_sessions_book
+      FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 COMMIT;

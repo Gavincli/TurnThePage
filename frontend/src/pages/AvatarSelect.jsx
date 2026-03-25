@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import HamburgerMenu from '../components/HamburgerMenu'
 import ReadAloud from '../components/ReadAloud'
+import MuseumBackground from '../components/MuseumBackground'
 
 const avatarOptions = [
   {
@@ -66,8 +67,9 @@ const AvatarSelect = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.12),_transparent_28%),linear-gradient(to_bottom,_#f8fafc,_#eef2ff)] pb-24 md:pb-10">
-      <header className="sticky top-0 z-20 border-b border-white/60 bg-white/80 backdrop-blur-xl">
+    <div className="relative min-h-screen bg-white pb-24 md:pb-10 overflow-x-hidden text-[#2b2724]">
+      <MuseumBackground />
+      <header className="sticky top-0 z-30 border-b border-white/60 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400">
@@ -82,7 +84,7 @@ const AvatarSelect = () => {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+      <main className="relative z-20 mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8">
         <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-8">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-slate-200 bg-white text-5xl shadow-sm">

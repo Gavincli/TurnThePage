@@ -171,6 +171,57 @@ export const AppProvider = ({ children }) => {
     return () => (usedIdle ? cancelIdleCallback(id) : clearTimeout(id))
   }, [])
 
+  const undoGoalCompletion = (goalId) => {
+    setGoalProgress((prev) => {
+      const updated = prev.map((g) => {
+        if (g.id === goalId) {
+          // Revert completely to target - 1 so it isn't still instantly completed
+          const safeCurrent = Math.max(0, g.target - 1)
+          return { ...g, current: safeCurrent, completed: false }
+        }
+        return g
+      })
+      setGoalsCompleted(updated.filter((g) => g.completed).length)
+      return updated
+    })
+  }
+
+  const deleteGoal = (goalId) => {
+    setGoalProgress((prev) => {
+      const updated = prev.filter((g) => g.id !== goalId)
+      setGoalsCompleted(updated.filter((g) => g.completed).length)
+      return updated
+    })
+  }
+
+  const updateGoalProgress = (goalId, newCurrent) => {
+    setGoalProgress((prev) => {
+      const updated = prev.map((g) => {
+        if (g.id === goalId) {
+          const clamped = Math.max(0, Math.min(newCurrent, g.target))
+          const isNowCompleted = clamped >= g.target
+          return { ...g, current: clamped, completed: isNowCompleted }
+        }
+        return g
+      })
+      setGoalsCompleted(updated.filter((g) => g.completed).length)
+      return updated
+    })
+  }
+
+  const markGoalCompleted = (goalId) => {
+    setGoalProgress((prev) => {
+      const updated = prev.map((g) => {
+        if (g.id === goalId) {
+          return { ...g, current: g.target, completed: true }
+        }
+        return g
+      })
+      setGoalsCompleted(updated.filter((g) => g.completed).length)
+      return updated
+    })
+  }
+
   const value = {
     // Stats
     currentStreak,
@@ -186,6 +237,10 @@ export const AppProvider = ({ children }) => {
     goalsCompleted,
     goalProgress,
     setGoalProgress,
+    updateGoalProgress,
+    markGoalCompleted,
+    undoGoalCompletion,
+    deleteGoal,
     // User
     userId: USER_ID,
   }

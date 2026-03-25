@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 import BottomNav from '../components/BottomNav'
+import MuseumBackground from '../components/MuseumBackground'
 
 const API_BASE = 'http://localhost:3001'
 const TEST_USER_ID = '11111111-1111-1111-1111-111111111111'
@@ -293,6 +294,12 @@ const LogReading = () => {
   }
 
   return (
+    <div className="relative min-h-screen bg-white pb-16 font-sans overflow-x-hidden text-[#2b2724]">
+      <MuseumBackground />
+      <header className="sticky top-0 z-30 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
+          <div>
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#8a8178]">
     <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-16 font-sans">
       <a
         href="#main-content"
@@ -322,6 +329,10 @@ const LogReading = () => {
         </div>
       </header>
 
+      <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
+        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+          <section className="relative overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-5 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:p-6">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
       <main id="main-content" role="main" className="mx-auto w-full max-w-7xl px-3 pt-4 sm:px-6 sm:pt-6 lg:px-10">
         <div className="flex flex-col gap-4 sm:gap-5">
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
@@ -396,6 +407,25 @@ const LogReading = () => {
                   >
                     Minutes <span className="text-red-500" aria-hidden="true">*</span>
                   </label>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {quickMinutes.map((minutes) => {
+                      const isActive = selectedQuick === minutes
+                      return (
+                        <button
+                          key={minutes}
+                          type="button"
+                          onClick={() => handleQuickSelect(minutes)}
+                          className={`rounded-xl px-4 py-3.5 text-sm font-semibold transition ${
+                            isActive
+                              ? 'bg-[#3f3b39] text-[#fcfbfa] shadow-md border border-[#3f3b39]'
+                              : 'border border-[#e8e4db] bg-white text-[#4a4542] hover:bg-[#fbf9f5] cursor-pointer shadow-sm'
+                          }`}
+                        >
+                          {minutes} min
+                        </button>
+                      )
+                    })}
+                  </div>
                   <input
                     id="minutes"
                     type="number"
@@ -435,6 +465,11 @@ const LogReading = () => {
                   <input
                     id="pages"
                     type="number"
+                    min="1"
+                    value={minutesRead}
+                    onChange={handleMinutesChange}
+                    className="w-full rounded-xl border border-[#e8e4db] bg-white px-4 py-4 text-xl font-serif font-medium text-[#2b2724] shadow-sm outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
+                    placeholder="Minutes"
                     min="0"
                     max="99999"
                     value={pages}
@@ -662,6 +697,22 @@ const LogReading = () => {
             </div>
           </section>
 
+          <section className="space-y-5">
+            <div className="rounded-[2rem] border border-[#e8e4db] bg-white p-6 shadow-md">
+              <h3 className="mt-2 text-xl font-serif font-medium tracking-tight text-[#2b2724]">
+                Why save?
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-[#6b645d]">
+                It shows your hard work!
+              </p>
+            </div>
+
+            <div className="rounded-[2rem] border border-[#e8e4db] bg-white p-6 shadow-md">
+              <h3 className="mt-2 text-xl font-serif font-medium tracking-tight text-[#2b2724]">
+                Remember
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-[#6b645d]">
+                Any reading is good reading.
           <section className="overflow-x-auto rounded-[1.5rem] border border-[#eeebe4] bg-white p-4 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:rounded-[2rem] sm:p-6">
             <h2 className="text-lg font-serif font-medium tracking-tight text-[#2b2724] sm:text-xl">
               Books you&apos;ve read
@@ -743,6 +794,7 @@ const LogReading = () => {
           Turn The Page.
         </div>
       </footer>
+      <BottomNav />
     </div>
   )
 }

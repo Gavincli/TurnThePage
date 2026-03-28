@@ -1,4 +1,7 @@
 # Logs
+
+.claude/
+
 logs
 *.log
 npm-debug.log*

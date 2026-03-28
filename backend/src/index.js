@@ -17,8 +17,6 @@ app.use(cors());
 // Parse JSON request bodies into req.body.
 app.use(express.json());
 
-const PORT = process.env.PORT || 4000;
-
 // Simple health check so you can verify the server is running.
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
@@ -36,10 +34,18 @@ app.use("/api/sessions", sessionsRouter);
 // Home page dashboard stats (streak, today, week, totals).
 app.use("/api/stats", statsRouter);
 
-app.listen(PORT, () => {
-  // This log is useful when you are debugging which port the backend is actually using.
-  // eslint-disable-next-line no-console
-  console.log(`Server listening on port ${PORT}`);
+app.use("/api/auth", authRouter);
+
+// Same health check under /api for frontend + Railway checks.
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-app.use("/api/auth", authRouter);
+const port = Number(process.env.PORT) || 4000;
+// Railway requires binding to all interfaces.
+const host = process.env.HOST || "0.0.0.0";
+
+app.listen(port, host, () => {
+  // eslint-disable-next-line no-console
+  console.log(`Server listening on http://${host}:${port}`);
+});

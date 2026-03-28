@@ -2,7 +2,23 @@
 
 BEGIN;
 
--- Seed default test user.
+-- Profile / rewards DDL before user inserts (002 runs before 008 in full migrate order).
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS selected_avatar VARCHAR(64);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
+
+CREATE TABLE IF NOT EXISTS user_reward_unlocks (
+  user_id     UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  reward_key  VARCHAR(64) NOT NULL,
+  unlocked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, reward_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_reward_unlocks_user_id ON user_reward_unlocks(user_id);
+
+-- Demo users: bcrypt hash is for password "password" (Laravel-style test vector).
 INSERT INTO users (
   user_id,
   username,
@@ -11,17 +27,30 @@ INSERT INTO users (
   created_at,
   last_login_at,
   is_active,
-  display_name
+  display_name,
+  selected_avatar
 )
 VALUES (
   '11111111-1111-1111-1111-111111111111',
   'testuser',
   'test@example.com',
-  'dev_hash_placeholder',
+  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
   NOW(),
   NOW(),
   true,
-  'Test User'
+  'Test User',
+  'fox'
+),
+(
+  '33333333-3333-3333-3333-333333333333',
+  'demouser2',
+  'demo2@example.com',
+  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+  NOW(),
+  NOW(),
+  true,
+  'Demo User Two',
+  'owl'
 )
 ON CONFLICT (user_id) DO NOTHING;
 
@@ -72,6 +101,39 @@ VALUES
   (
     '22222222-2222-2222-2222-222222222223',
     '11111111-1111-1111-1111-111111111111',
+    'Finish 1 book',
+    NOW(),
+    NULL,
+    3,
+    0.00,
+    false,
+    'all_time'
+  ),
+  (
+    '22222222-2222-2222-2222-222222222231',
+    '33333333-3333-3333-3333-333333333333',
+    'Read 10 minutes',
+    NOW(),
+    NULL,
+    1,
+    0.00,
+    false,
+    'daily'
+  ),
+  (
+    '22222222-2222-2222-2222-222222222232',
+    '33333333-3333-3333-3333-333333333333',
+    'Read 20 pages',
+    NOW(),
+    NULL,
+    2,
+    0.00,
+    false,
+    'daily'
+  ),
+  (
+    '22222222-2222-2222-2222-222222222233',
+    '33333333-3333-3333-3333-333333333333',
     'Finish 1 book',
     NOW(),
     NULL,
@@ -151,7 +213,24 @@ VALUES
   ('bbbbbbbb-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000007', 0, false),
   ('bbbbbbbb-0000-0000-0000-000000000008', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000008', 0, false),
   ('bbbbbbbb-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000009', 0, false),
-  ('bbbbbbbb-0000-0000-0000-000000000010', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000010', 0, false)
+  ('bbbbbbbb-0000-0000-0000-000000000010', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000010', 0, false),
+  ('cccccccc-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000001', 0, false),
+  ('cccccccc-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000002', 0, false),
+  ('cccccccc-0000-0000-0000-000000000003', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000003', 0, false),
+  ('cccccccc-0000-0000-0000-000000000004', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000004', 0, false),
+  ('cccccccc-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000005', 0, false),
+  ('cccccccc-0000-0000-0000-000000000006', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000006', 0, false),
+  ('cccccccc-0000-0000-0000-000000000007', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000007', 0, false),
+  ('cccccccc-0000-0000-0000-000000000008', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000008', 0, false),
+  ('cccccccc-0000-0000-0000-000000000009', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000009', 0, false),
+  ('cccccccc-0000-0000-0000-000000000010', '33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000010', 0, false)
 ON CONFLICT (user_id, template_id) DO NOTHING;
+
+INSERT INTO user_reward_unlocks (user_id, reward_key) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'first_login'),
+  ('11111111-1111-1111-1111-111111111111', 'reader_starter'),
+  ('33333333-3333-3333-3333-333333333333', 'first_login'),
+  ('33333333-3333-3333-3333-333333333333', 'night_reader')
+ON CONFLICT (user_id, reward_key) DO NOTHING;
 
 COMMIT;

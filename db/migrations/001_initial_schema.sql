@@ -11,8 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP NOT NULL,
   last_login_at TIMESTAMP,
   is_active BOOLEAN NOT NULL,
-  display_name VARCHAR(100)
+  display_name VARCHAR(100),
+  selected_avatar VARCHAR(64)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
 CREATE TABLE IF NOT EXISTS goals (
   goal_id UUID PRIMARY KEY,
@@ -41,5 +45,14 @@ CREATE TABLE IF NOT EXISTS books (
 
 CREATE INDEX IF NOT EXISTS idx_books_user_id     ON books(user_id);
 CREATE INDEX IF NOT EXISTS idx_books_is_finished ON books(is_finished);
+
+CREATE TABLE IF NOT EXISTS user_reward_unlocks (
+  user_id     UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  reward_key  VARCHAR(64) NOT NULL,
+  unlocked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, reward_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_reward_unlocks_user_id ON user_reward_unlocks(user_id);
 
 COMMIT;

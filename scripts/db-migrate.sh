@@ -46,6 +46,7 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_books.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/005_goal_templates_period.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/006_books_total_pages.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/007_reading_sessions_pages_read.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_multi_user_profile_rewards.sql
 
 echo "Migration complete: schema + seed applied."
 

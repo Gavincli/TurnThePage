@@ -30,6 +30,7 @@ if [ "$new_users_user_id_exists" = "f" ]; then
   exit 1
 fi
 
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_multi_user_profile_rewards.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_seed_data.sql
 
 echo "Seed complete."

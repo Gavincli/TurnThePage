@@ -5,6 +5,7 @@ const goalsRouter = require("./routes/goals");
 const sessionsRouter = require("./routes/sessions");
 const booksRouter = require("./routes/books");
 const statsRouter = require("./routes/stats");
+const authRouter = require("./routes/auth");
 
 // Load environment variables from .env so PORT and DATABASE_URL are available.
 dotenv.config();
@@ -40,3 +41,5 @@ app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Server listening on port ${PORT}`);
 });
+
+app.use("/api/auth", authRouter);

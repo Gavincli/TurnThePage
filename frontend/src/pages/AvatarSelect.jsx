@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import HamburgerMenu from '../components/HamburgerMenu'
 import ReadAloud from '../components/ReadAloud'
@@ -33,6 +34,7 @@ const avatarOptions = [
     name: 'Fox',
     description: 'Smart and bright',
     bg: 'bg-orange-50 border-orange-200',
+    minMinutes: 20,
   },
   {
     id: 'owl',
@@ -40,6 +42,7 @@ const avatarOptions = [
     name: 'Owl',
     description: 'Wise and focused',
     bg: 'bg-sky-50 border-sky-200',
+    minMinutes: 100,
   },
   {
     id: 'star',
@@ -47,6 +50,7 @@ const avatarOptions = [
     name: 'Star',
     description: 'Shining and brave',
     bg: 'bg-indigo-50 border-indigo-200',
+    minMinutes: 1000,
   },
 ]
 
@@ -54,6 +58,7 @@ const getInitialAvatar = () => localStorage.getItem('ttp_avatar') || 'cat'
 
 const AvatarSelect = () => {
   const navigate = useNavigate()
+  const { totalMinutes } = useApp()
   const [selectedAvatar, setSelectedAvatar] = useState(getInitialAvatar)
 
   const handleSave = () => {
@@ -98,19 +103,25 @@ const AvatarSelect = () => {
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {avatarOptions.map((avatar) => {
               const isSelected = selectedAvatar === avatar.id
+              const isLocked = avatar.minMinutes && totalMinutes < avatar.minMinutes
 
               return (
                 <button
                   key={avatar.id}
+                  disabled={isLocked}
                   onClick={() => setSelectedAvatar(avatar.id)}
-                  className={`rounded-[1.5rem] border p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${avatar.bg} ${
+                  className={`relative rounded-[1.5rem] border p-4 text-left transition duration-200 ${
+                    isLocked 
+                      ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed' 
+                      : `${avatar.bg} hover:-translate-y-0.5 hover:shadow-md`
+                  } ${
                     isSelected
                       ? 'ring-2 ring-indigo-500 shadow-md'
                       : 'shadow-sm'
                   }`}
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-3xl shadow-sm">
-                    {avatar.emoji}
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-3xl shadow-sm ${isLocked ? 'grayscale opacity-50' : ''}`}>
+                    {isLocked ? '🔒' : avatar.emoji}
                   </div>
 
                   <h3 className="mt-4 text-lg font-semibold text-slate-900">
@@ -118,7 +129,7 @@ const AvatarSelect = () => {
                   </h3>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    {avatar.description}
+                    {isLocked ? `Unlock at ${avatar.minMinutes}m` : avatar.description}
                   </p>
                 </button>
               )

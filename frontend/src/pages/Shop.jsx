@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import BottomNav from '../components/BottomNav'
 import MuseumBackground from '../components/MuseumBackground'
+import HamburgerMenu from '../components/HamburgerMenu'
+import { useApp } from '../context/AppContext'
 
 const avatarEmojiMap = {
   cat: '🐱',
@@ -12,85 +14,84 @@ const avatarEmojiMap = {
 }
 
 const backgroundOptions = [
-  { id: 'bg-slate-100', colorClass: 'bg-slate-100', name: 'Slate' },
-  { id: 'bg-pink-100', colorClass: 'bg-pink-100', name: 'Pink' },
-  { id: 'bg-violet-100', colorClass: 'bg-violet-100', name: 'Violet' },
-  { id: 'bg-indigo-100', colorClass: 'bg-indigo-100', name: 'Indigo' },
-  { id: 'bg-sky-100', colorClass: 'bg-sky-100', name: 'Sky' },
-  { id: 'bg-emerald-100', colorClass: 'bg-emerald-100', name: 'Emerald' },
-  { id: 'bg-amber-100', colorClass: 'bg-amber-100', name: 'Amber' },
-  { id: 'bg-orange-100', colorClass: 'bg-orange-100', name: 'Orange' },
-  { id: 'bg-rose-100', colorClass: 'bg-rose-100', name: 'Rose' },
-  { id: 'bg-park', colorClass: 'bg-gradient-to-b from-sky-300 via-sky-200 to-green-400', name: 'Park' },
-  { id: 'bg-beach', colorClass: 'bg-gradient-to-b from-sky-400 via-cyan-200 to-amber-200', name: 'Beach' },
-  { id: 'bg-sunset', colorClass: 'bg-gradient-to-b from-orange-400 via-rose-300 to-purple-400', name: 'Sunset' },
-  { id: 'bg-night', colorClass: 'bg-gradient-to-b from-slate-900 via-indigo-900 to-purple-900', name: 'Night' },
-  { id: 'bg-magic', colorClass: 'bg-gradient-to-br from-fuchsia-300 via-purple-300 to-pink-300', name: 'Magic' },
+  { id: 'bg-slate-100', colorClass: 'bg-slate-100', name: 'Slate', minMinutes: 0 },
+  { id: 'bg-pink-100', colorClass: 'bg-pink-100', name: 'Pink', minMinutes: 0 },
+  { id: 'bg-violet-100', colorClass: 'bg-violet-100', name: 'Violet', minMinutes: 10 },
+  { id: 'bg-indigo-100', colorClass: 'bg-indigo-100', name: 'Indigo', minMinutes: 20 },
+  { id: 'bg-sky-100', colorClass: 'bg-sky-100', name: 'Sky', minMinutes: 30 },
+  { id: 'bg-emerald-100', colorClass: 'bg-emerald-100', name: 'Emerald', minMinutes: 40 },
+  { id: 'bg-amber-100', colorClass: 'bg-amber-100', name: 'Amber', minMinutes: 50 },
+  { id: 'bg-orange-100', colorClass: 'bg-orange-100', name: 'Orange', minMinutes: 60 },
+  { id: 'bg-rose-100', colorClass: 'bg-rose-100', name: 'Rose', minMinutes: 80 },
+  { id: 'bg-park', colorClass: 'bg-gradient-to-b from-sky-300 via-sky-200 to-green-400', name: 'Park', minMinutes: 90 },
+  { id: 'bg-beach', colorClass: 'bg-gradient-to-b from-sky-400 via-cyan-200 to-amber-200', name: 'Beach', minMinutes: 100 },
+  { id: 'bg-sunset', colorClass: 'bg-gradient-to-b from-orange-400 via-rose-300 to-purple-400', name: 'Sunset', minMinutes: 500 },
+  { id: 'bg-night', colorClass: 'bg-gradient-to-b from-slate-900 via-indigo-900 to-purple-900', name: 'Night', minMinutes: 1000 },
+  { id: 'bg-magic', colorClass: 'bg-gradient-to-br from-fuchsia-300 via-purple-300 to-pink-300', name: 'Magic', minMinutes: 2000 },
 ]
 
 const wearableOptions = [
-  { id: 'none', emoji: '🚫', name: 'None' },
-  { id: 'crown', emoji: '👑', name: 'Crown' },
-  { id: 'cap', emoji: '🧢', name: 'Cap' },
-  { id: 'party', emoji: '🥳', name: 'Party Hat' },
-  { id: 'glasses', emoji: '👓', name: 'Glasses' },
-  { id: 'bow', emoji: '🎀', name: 'Bow' },
-  { id: 'flower', emoji: '🌸', name: 'Flower' },
-  { id: 'headphones', emoji: '🎧', name: 'Audio' },
-  { id: 'cool', emoji: '🕶️', name: 'cool' },
-  { id: 'dress', emoji: '👗', name: 'dress' },
-  { id: 'shirt', emoji: '👕', name: 'shirt' },
-  { id: 'pants', emoji: '👖', name: 'pants' },
-  { id: 'magichat', emoji: '🎩', name: 'magichat' },
-  { id: 'graduation', emoji: '🎓', name: 'graduation' },
-
+  { id: 'none', emoji: '🚫', name: 'None', minMinutes: 0 },
+  { id: 'crown', emoji: '👑', name: 'Crown', minMinutes: 0 },
+  { id: 'cap', emoji: '🧢', name: 'Cap', minMinutes: 10 },
+  { id: 'glasses', emoji: '👓', name: 'Glasses', minMinutes: 20 },
+  { id: 'bow', emoji: '🎀', name: 'Bow', minMinutes: 30 },
+  { id: 'flower', emoji: '🌸', name: 'Flower', minMinutes: 40 },
+  { id: 'headphones', emoji: '🎧', name: 'Audio', minMinutes: 50 },
+  { id: 'cool', emoji: '🕶️', name: 'Cool', minMinutes: 60 },
+  { id: 'dress', emoji: '👗', name: 'Dress', minMinutes: 80 },
+  { id: 'shirt', emoji: '👕', name: 'Shirt', minMinutes: 90 },
+  { id: 'pants', emoji: '👖', name: 'Pants', minMinutes: 100 },
+  { id: 'magichat', emoji: '🎩', name: 'Magic Hat', minMinutes: 500 },
+  { id: 'graduation', emoji: '🎓', name: 'Graduation', minMinutes: 2000 },
 ]
 
 const roomOptions = [
-  { id: 'trash', emoji: '🗑️', name: 'Clear All' },
-  { id: 'plant', emoji: '🪴', name: 'Plant' },
-  { id: 'teddy', emoji: '🧸', name: 'Teddy Bear' },
-  { id: 'guitar', emoji: '🎸', name: 'Guitar' },
-  { id: 'bed', emoji: '🛏️', name: 'Bed' },
-  { id: 'window', emoji: '🪟', name: 'Window' },
-  { id: 'picture', emoji: '🖼️', name: 'Picture' },
-  { id: 'lamp', emoji: '🛋️', name: 'Lamp' },
-  { id: 'books', emoji: '📚', name: 'Books' },
-  { id: 'backpack', emoji: '🎒', name: 'Backpack' },
-  { id: 'tree', emoji: '🌳', name: 'Tree' },
-  { id: 'palm', emoji: '🌴', name: 'Palm' },
-  { id: 'pine', emoji: '🌲', name: 'Pine' },
-  { id: 'sun', emoji: '🌞', name: 'Sun' },
-  { id: 'moon', emoji: '🌝', name: 'Moon' },
-  { id: 'snowman', emoji: '⛄️', name: 'Snowman' },
-  { id: 'cake', emoji: '🎂', name: 'Cake' },
-  { id: 'donut', emoji: '🍩', name: 'Donut' },
-  { id: 'popcorn', emoji: '🍿', name: 'Popcorn' },
-  { id: 'icecream', emoji: '🍦', name: 'Ice Cream' },
-  { id: 'lunch', emoji: '🍱', name: 'Lunch' },
-  { id: 'soccer', emoji: '⚽️', name: 'Soccer' },
-  { id: 'basketball', emoji: '🏀', name: 'Basketball' },
-  { id: 'football', emoji: '🏈', name: 'Football' },
-  { id: 'skateboard', emoji: '🛹', name: 'Skateboard' },
-  { id: 'bike', emoji: '🚲', name: 'Bike' },
-  { id: 'car', emoji: '🚗', name: 'Car' },
-  { id: 'phone', emoji: '📱', name: 'Phone' },
-  { id: 'laptop', emoji: '💻', name: 'Laptop' },
-  { id: 'disco', emoji: '🪩', name: 'Disco' },
-  { id: 'colombia', emoji: '🇨🇴', name: 'Colombia' },
-  { id: 'brazil', emoji: '🇧🇷', name: 'Brazil' },
-  { id: 'korea', emoji: '🇰🇷', name: 'Korea' },
-  { id: 'usa', emoji: '🇺🇸', name: 'USA' },
-  { id: 'door', emoji: '🚪', name: 'Door' },
-  { id: 'mirror', emoji: '🪞', name: 'Mirror' },
-  { id: 'faucet', emoji: '🚰', name: 'Faucet' },
-  { id: 'bath', emoji: '🛁', name: 'Bath' },
-  { id: 'toilet', emoji: '🚽', name: 'Toilet' },
-  { id: 'toiletpaper', emoji: '🧻', name: 'Toilet Paper' },
-  { id: 'toothbrush', emoji: '🪥', name: 'Toothbrush' },
+  { id: 'trash', emoji: '🗑️', name: 'Clear All', minMinutes: 0 },
+  { id: 'plant', emoji: '🪴', name: 'Plant', minMinutes: 0 },
+  { id: 'teddy', emoji: '🧸', name: 'Teddy Bear', minMinutes: 0 },
+  { id: 'guitar', emoji: '🎸', name: 'Guitar', minMinutes: 0 },
+  { id: 'bed', emoji: '🛏️', name: 'Bed', minMinutes: 10 },
+  { id: 'window', emoji: '🪟', name: 'Window', minMinutes: 20 },
+  { id: 'picture', emoji: '🖼️', name: 'Picture', minMinutes: 30 },
+  { id: 'lamp', emoji: '🛋️', name: 'Lamp', minMinutes: 40 },
+  { id: 'books', emoji: '📚', name: 'Books', minMinutes: 50 },
+  { id: 'backpack', emoji: '🎒', name: 'Backpack', minMinutes: 60 },
+  { id: 'tree', emoji: '🌳', name: 'Tree', minMinutes: 80 },
+  { id: 'palm', emoji: '🌴', name: 'Palm', minMinutes: 90 },
+  { id: 'pine', emoji: '🌲', name: 'Pine', minMinutes: 100 },
+  { id: 'sun', emoji: '🌞', name: 'Sun', minMinutes: 500 },
+  { id: 'moon', emoji: '🌝', name: 'Moon', minMinutes: 500 },
+  { id: 'snowman', emoji: '⛄️', name: 'Snowman', minMinutes: 500 },
+  { id: 'cake', emoji: '🎂', name: 'Cake', minMinutes: 1000 },
+  { id: 'donut', emoji: '🍩', name: 'Donut', minMinutes: 1000 },
+  { id: 'popcorn', emoji: '🍿', name: 'Popcorn', minMinutes: 1000 },
+  { id: 'icecream', emoji: '🍦', name: 'Ice Cream', minMinutes: 1000 },
+  { id: 'lunch', emoji: '🍱', name: 'Lunch', minMinutes: 1000 },
+  { id: 'soccer', emoji: '⚽️', name: 'Soccer', minMinutes: 1500 },
+  { id: 'basketball', emoji: '🏀', name: 'Basketball', minMinutes: 1500 },
+  { id: 'football', emoji: '🏈', name: 'Football', minMinutes: 1500 },
+  { id: 'skateboard', emoji: '🛹', name: 'Skateboard', minMinutes: 1500 },
+  { id: 'bike', emoji: '🚲', name: 'Bike', minMinutes: 1500 },
+  { id: 'car', emoji: '🚗', name: 'Car', minMinutes: 1500 },
+  { id: 'phone', emoji: '📱', name: 'Phone', minMinutes: 1500 },
+  { id: 'laptop', emoji: '💻', name: 'Laptop', minMinutes: 1500 },
+  { id: 'disco', emoji: '🪩', name: 'Disco', minMinutes: 1500 },
+  { id: 'colombia', emoji: '🇨🇴', name: 'Colombia', minMinutes: 2000 },
+  { id: 'brazil', emoji: '🇧🇷', name: 'Brazil', minMinutes: 2000 },
+  { id: 'korea', emoji: '🇰🇷', name: 'Korea', minMinutes: 2000 },
+  { id: 'usa', emoji: '🇺🇸', name: 'USA', minMinutes: 2000 },
+  { id: 'door', emoji: '🚪', name: 'Door', minMinutes: 2000 },
+  { id: 'mirror', emoji: '🪞', name: 'Mirror', minMinutes: 2000 },
+  { id: 'faucet', emoji: '🚰', name: 'Faucet', minMinutes: 2000 },
+  { id: 'bath', emoji: '🛁', name: 'Bath', minMinutes: 2000 },
+  { id: 'toilet', emoji: '🚽', name: 'Toilet', minMinutes: 2000 },
+  { id: 'toiletpaper', emoji: '🧻', name: 'Toilet Paper', minMinutes: 2000 },
+  { id: 'toothbrush', emoji: '🪥', name: 'Toothbrush', minMinutes: 2000 },
 ]
 
 const Shop = () => {
+  const { totalMinutes } = useApp()
   const baseAvatar = localStorage.getItem('ttp_avatar') || 'cat'
   const emoji = avatarEmojiMap[baseAvatar] || '🐱'
 
@@ -224,29 +225,36 @@ const Shop = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-white pb-24 md:pb-10 overflow-x-hidden text-[#2b2724]">
+    <div className="relative min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-24 md:pb-10 overflow-x-hidden text-[#2b2724]">
       <MuseumBackground />
       
-      <header className="sticky top-0 z-30 border-b border-white/60 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Closet
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#8a8178]">
+              Turn The Page
+            </p>
+            <h1 className="mt-0.5 flex items-center gap-2 text-3xl font-serif font-medium tracking-tight text-[#2b2724]">
+              Shop
             </h1>
+            <p className="mt-1 text-xs sm:text-sm font-medium text-[#8a8178]">
+              Customize your look
+            </p>
           </div>
+          <HamburgerMenu />
         </div>
       </header>
 
-      <main className="relative z-20 mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8 flex flex-col md:flex-row gap-8">
+      <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10 lg:pt-12 flex flex-col lg:flex-row items-center justify-center gap-10 xl:gap-20">
         
         {/* Top / Left Section: Avatar Preview */}
-        <section className="w-full md:w-1/2 lg:w-2/5 flex flex-col items-center shrink-0">
+        <section className="w-full lg:w-1/2 flex flex-col items-center lg:items-end justify-center shrink-0">
           <div 
             ref={containerRef}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`relative w-full max-w-sm aspect-square rounded-[3rem] border-4 border-white shadow-[0_20px_60px_rgba(15,23,42,0.12)] overflow-hidden transition-colors duration-500 flex flex-col items-center justify-center ${selectedBg}`}
+            className={`relative w-full max-w-md xl:max-w-lg aspect-square rounded-[3rem] border-4 border-white shadow-[0_20px_60px_rgba(15,23,42,0.12)] overflow-hidden transition-colors duration-500 flex flex-col items-center justify-center ${backgroundOptions.find(b => b.id === selectedBg)?.colorClass || 'bg-slate-100'}`}
           >
             {/* Background elements to make it look like a room */}
             <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
@@ -265,7 +273,7 @@ const Shop = () => {
                   top: `${item.y}%`,
                   zIndex: draggingItem?.id === item.id ? 20 : 5
                 }}
-                title="Double-click to remove"
+                title="Double-click Room Item to remove"
               >
                 {roomOptions.find(r => r.id === item.type)?.emoji}
               </div>
@@ -295,18 +303,19 @@ const Shop = () => {
             </div>
             
             <div className="absolute bottom-4 left-0 right-0 text-center opacity-40 text-xs font-semibold tracking-wider pointer-events-none mix-blend-overlay">
-              Drop items around avatar
             </div>
           </div>
-          <p className="mt-6 text-sm font-medium text-slate-500 uppercase tracking-widest text-center">
-            Your Look <br/>
-            <span className="text-xs text-slate-400 normal-case tracking-normal">Double-click items to remove</span>
-          </p>
+          <div className="mt-5 flex flex-col items-center w-full max-w-md xl:max-w-lg gap-1 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#e0dbd3] bg-white px-5 py-1.5 shadow-sm">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#4a4542]">Your Look</span>
+              <span className="text-xs text-slate-400">Double-click Room Item to remove</span>
+            </div>
+          </div>
         </section>
 
         {/* Bottom / Right Section: Customization Categories & Items */}
-        <section className="w-full md:w-1/2 lg:w-3/5">
-          <div className="rounded-[2rem] border border-white/70 bg-white/85 p-4 sm:p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+        <section className="w-full lg:w-1/2 flex justify-center lg:justify-start">
+          <div className="w-full max-w-lg xl:max-w-xl rounded-[2rem] border border-white/70 bg-white/85 p-5 sm:p-8 xl:p-10 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
             
             {/* Tabs */}
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
@@ -325,51 +334,100 @@ const Shop = () => {
               ))}
             </div>
 
-            {/* Items Grid */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 max-h-[50vh] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200">
+            {/* Items Grid — fixed height so layout never shifts between tabs */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 xl:gap-5 h-[50vh] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200">
               
-              {activeTab === 'backgrounds' && backgroundOptions.map(bg => (
-                <button
-                  key={bg.id}
-                  onClick={() => setSelectedBg(bg.id)}
-                  className={`aspect-square rounded-2xl border-4 transition-all duration-200 ${bg.colorClass} ${
-                    selectedBg === bg.id
-                      ? 'border-slate-900 shadow-md scale-105'
-                      : 'border-white hover:scale-105 shadow-sm'
-                  }`}
-                  aria-label={`Select ${bg.name} background`}
-                />
-              ))}
+              {activeTab === 'backgrounds' && backgroundOptions.map(bg => {
+                const isLocked = bg.minMinutes > totalMinutes
+                const isSelected = selectedBg === bg.id
+                return (
+                  <div key={bg.id} className="relative aspect-square">
+                    <button
+                      onClick={() => !isLocked && setSelectedBg(bg.id)}
+                      disabled={isLocked}
+                      title={isLocked ? `🔒 Unlock at ${bg.minMinutes} mins read` : bg.name}
+                      className={`w-full h-full rounded-2xl border-4 transition-all duration-200 ${bg.colorClass} ${
+                        isLocked
+                          ? 'opacity-40 blur-[1.5px] cursor-not-allowed border-white'
+                          : isSelected
+                            ? 'border-slate-900 shadow-md scale-105 cursor-pointer'
+                            : 'border-white hover:scale-105 shadow-sm cursor-pointer'
+                      }`}
+                      aria-label={isLocked ? `${bg.name} locked` : `Select ${bg.name} background`}
+                    />
+                    {isLocked && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-2xl">
+                        <span className="text-lg drop-shadow">🔒</span>
+                        <span className="text-[9px] font-bold text-slate-600 mt-0.5 bg-white/80 rounded-full px-1.5 py-0.5 leading-none">{bg.minMinutes}m</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
 
-              {activeTab === 'wearables' && wearableOptions.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => handleSelectWearable(item.id)}
-                  className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 border transition-all duration-200 ${
-                    selectedWearable === item.id
-                      ? 'bg-slate-900 border-slate-900 text-white shadow-md scale-105'
-                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm hover:scale-105'
-                  }`}
-                >
-                  <span className="text-3xl sm:text-4xl">{item.emoji}</span>
-                  <span className={`text-[10px] sm:text-xs font-medium truncate w-full text-center px-1 ${selectedWearable === item.id ? 'text-slate-200' : 'text-slate-500'}`}>
-                    {item.name}
-                  </span>
-                </button>
-              ))}
+              {activeTab === 'wearables' && wearableOptions.map(item => {
+                const isLocked = item.minMinutes > totalMinutes
+                const isSelected = selectedWearable === item.id
+                return (
+                  <div key={item.id} className="relative aspect-square">
+                    <button
+                      onClick={() => !isLocked && handleSelectWearable(item.id)}
+                      disabled={isLocked}
+                      title={isLocked ? `🔒 Unlock at ${item.minMinutes} mins read` : item.name}
+                      className={`w-full h-full rounded-2xl flex flex-col items-center justify-center gap-1 border transition-all duration-200 ${
+                        isLocked
+                          ? 'bg-slate-50 border-slate-200 opacity-40 blur-[1.5px] cursor-not-allowed'
+                          : isSelected
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-md scale-105 cursor-pointer'
+                            : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm hover:scale-105 cursor-pointer'
+                      }`}
+                    >
+                      <span className="text-3xl sm:text-4xl">{item.emoji}</span>
+                      <span className={`text-[10px] sm:text-xs font-medium truncate w-full text-center px-1 ${isSelected && !isLocked ? 'text-slate-200' : 'text-slate-500'}`}>
+                        {item.name}
+                      </span>
+                    </button>
+                    {isLocked && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-2xl">
+                        <span className="text-lg drop-shadow">🔒</span>
+                        <span className="text-[9px] font-bold text-slate-600 mt-0.5 bg-white/80 rounded-full px-1.5 py-0.5 leading-none">{item.minMinutes}m</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
 
-              {activeTab === 'room' && roomOptions.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => handleAddRoomItem(item.id)}
-                  className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 border transition-all duration-200 bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm hover:scale-105`}
-                >
-                  <span className="text-3xl sm:text-4xl">{item.emoji}</span>
-                  <span className={`text-[10px] sm:text-xs font-medium truncate w-full text-center px-1 text-slate-500`}>
-                    {item.name}
-                  </span>
-                </button>
-              ))}
+              {activeTab === 'room' && roomOptions.map(item => {
+                const isLocked = item.minMinutes > totalMinutes
+                const isClear = item.id === 'trash'
+                return (
+                  <div key={item.id} className="relative aspect-square">
+                    <button
+                      onClick={() => !isLocked && handleAddRoomItem(item.id)}
+                      disabled={isLocked}
+                      title={isLocked ? `🔒 Unlock at ${item.minMinutes} mins read` : isClear ? 'Clear all room items' : `Add ${item.name}`}
+                      className={`w-full h-full rounded-2xl flex flex-col items-center justify-center gap-1 border transition-all duration-200 ${
+                        isLocked
+                          ? 'bg-slate-50 border-slate-200 opacity-40 blur-[1.5px] cursor-not-allowed'
+                          : isClear
+                            ? 'bg-red-50 border-red-200 text-red-500 hover:bg-red-100 shadow-sm hover:scale-105 cursor-pointer'
+                            : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm hover:scale-105 cursor-pointer'
+                      }`}
+                    >
+                      <span className="text-3xl sm:text-4xl">{item.emoji}</span>
+                      <span className="text-[10px] sm:text-xs font-medium truncate w-full text-center px-1 text-slate-500">
+                        {item.name}
+                      </span>
+                    </button>
+                    {isLocked && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-2xl">
+                        <span className="text-lg drop-shadow">🔒</span>
+                        <span className="text-[9px] font-bold text-slate-600 mt-0.5 bg-white/80 rounded-full px-1.5 py-0.5 leading-none">{item.minMinutes}m</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
 
             </div>
           </div>

@@ -40,7 +40,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] flex items-center justify-center p-6">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-md space-y-4 rounded-2xl border bg-white p-6 shadow"

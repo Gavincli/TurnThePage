@@ -133,7 +133,7 @@ const Goals = () => {
   const progressPercent = totalGoals ? Math.round((completedGoals / totalGoals) * 100) : 0
 
   return (
-    <div className="relative min-h-screen bg-white pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
+    <div className="relative min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
       <MuseumBackground />
       <header className="sticky top-0 z-30 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
@@ -203,7 +203,7 @@ const Goals = () => {
                       {activeView.badge}
                     </p>
                     <p className="mt-1 text-3xl font-serif font-medium leading-tight">{activeView.title}</p>
-                    <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[#c4bbb2]">
+                    <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-white/80 font-medium">
                       {activeView.subtitle}
                     </p>
                   </div>
@@ -251,11 +251,13 @@ const Goals = () => {
           </section>
 
           <section>
-            <div className="mb-4 flex items-center justify-between pl-1">
-              <h3 className="text-xs font-bold uppercase tracking-[0.22em] text-[#8a8178]">
-                Goals
-              </h3>
-              <ReadAloud text="Goals" size="xs" />
+            <div className="mb-4 flex items-center justify-between">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#e0dbd3] bg-white px-4 py-1.5 shadow-sm">
+                <h3 className="text-xs font-bold uppercase tracking-[0.22em] text-[#4a4542]">
+                  Your Goals
+                </h3>
+                <ReadAloud text="Your Goals" size="xs" />
+              </div>
             </div>
 
             {goalsLoading ? (

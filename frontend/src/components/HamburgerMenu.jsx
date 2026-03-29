@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 
 const HamburgerMenu = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useApp()
   const [isOpen, setIsOpen] = useState(false)
 
   const navItems = [
@@ -18,6 +20,12 @@ const HamburgerMenu = () => {
 
   const handleNavigate = (path) => {
     navigate(path)
+    setIsOpen(false)
+  }
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
     setIsOpen(false)
   }
 
@@ -54,6 +62,13 @@ const HamburgerMenu = () => {
               </button>
             )
           })}
+        {/* Desktop Logout */}
+        <button
+          onClick={handleLogout}
+          className="rounded-xl px-4 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600"
+        >
+          Log out
+        </button>
       </nav>
 
       {/* Mobile dropdown */}
@@ -92,6 +107,15 @@ const HamburgerMenu = () => {
                   </button>
                 )
               })}
+              {/* Mobile Logout */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-red-500 transition hover:bg-red-50"
+              >
+                <span className="text-[1.2rem]">🚪</span>
+                <span>Log out</span>
+              </button>
             </div>
           </div>
         </>

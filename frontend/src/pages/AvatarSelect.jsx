@@ -67,7 +67,7 @@ const AvatarSelect = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-white pb-24 md:pb-10 overflow-x-hidden text-[#2b2724]">
+    <div className="relative min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-24 md:pb-10 overflow-x-hidden text-[#2b2724]">
       <MuseumBackground />
       <header className="sticky top-0 z-30 border-b border-white/60 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">

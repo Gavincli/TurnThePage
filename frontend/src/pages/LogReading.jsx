@@ -5,8 +5,59 @@ import HamburgerMenu from '../components/HamburgerMenu'
 import BottomNav from '../components/BottomNav'
 import MuseumBackground from '../components/MuseumBackground'
 import { useApp } from '../context/AppContext'
+import { supabase } from '../utils/supabase'
+import { aggregateBookHistory, mapBookRow } from '../utils/booksDb'
 
-const API_BASE = 'http://localhost:4000'
+async function createOrReuseBook(userId, title, totalPagesOpt) {
+  const trimmed = title.trim()
+  const { data: existingList, error: listErr } = await supabase
+    .from('books')
+    .select('*')
+    .eq('user_id', userId)
+
+  if (listErr) throw listErr
+
+  const match = existingList?.find(
+    (b) => b.title.trim().toLowerCase() === trimmed.toLowerCase(),
+  )
+
+  if (match) {
+    if (
+      totalPagesOpt != null &&
+      Number(match.total_pages) !== Number(totalPagesOpt)
+    ) {
+      const { data: updated, error: upErr } = await supabase
+        .from('books')
+        .update({
+          total_pages: totalPagesOpt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('book_id', match.book_id)
+        .select()
+        .single()
+
+      if (upErr) throw upErr
+      return { book: mapBookRow(updated), wasCreated: false }
+    }
+    return { book: mapBookRow(match), wasCreated: false }
+  }
+
+  const bookId = crypto.randomUUID()
+  const { data: inserted, error: insErr } = await supabase
+    .from('books')
+    .insert({
+      book_id: bookId,
+      user_id: userId,
+      title: trimmed,
+      total_pages: totalPagesOpt ?? null,
+      is_finished: false,
+    })
+    .select()
+    .single()
+
+  if (insErr) throw insErr
+  return { book: mapBookRow(inserted), wasCreated: true }
+}
 
 const getToday = () => new Date().toISOString().slice(0, 10)
 
@@ -48,15 +99,22 @@ const LogReading = () => {
   )
 
   const loadBooks = useCallback(async () => {
+    if (!userId) {
+      setBooks([])
+      setIsBooksLoading(false)
+      return
+    }
     setIsBooksLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/api/books?userId=${userId}`)
-      if (!res.ok) {
-        throw new Error(`Books fetch failed: ${res.status}`)
-      }
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('user_id', userId)
+        .order('is_finished', { ascending: true })
+        .order('created_at', { ascending: false })
 
-      const data = await res.json()
-      setBooks(data.books ?? [])
+      if (error) throw error
+      setBooks((data ?? []).map(mapBookRow))
     } catch (err) {
       console.error('Failed to load books for Log Reading.', err)
       setBooks([])
@@ -66,15 +124,34 @@ const LogReading = () => {
   }, [userId])
 
   const loadBookHistory = useCallback(async () => {
+    if (!userId) {
+      setBookReads([])
+      setIsHistoryLoading(false)
+      return
+    }
     setIsHistoryLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/api/books/history?userId=${userId}`)
-      if (!res.ok) {
-        throw new Error(`Book history fetch failed: ${res.status}`)
-      }
+      const [booksRes, sessRes] = await Promise.all([
+        supabase.from('books').select('*').eq('user_id', userId),
+        supabase
+          .from('reading_sessions')
+          .select('book_id, minutes_read, pages_read, session_date')
+          .eq('user_id', userId)
+          .not('book_id', 'is', null),
+      ])
 
-      const data = await res.json()
-      setBookReads((data.books ?? []).filter((book) => book.totalMinutes > 0 || book.totalPagesRead > 0))
+      if (booksRes.error) throw booksRes.error
+      if (sessRes.error) throw sessRes.error
+
+      const history = aggregateBookHistory(
+        booksRes.data ?? [],
+        sessRes.data ?? [],
+      )
+      setBookReads(
+        history.filter(
+          (book) => book.totalMinutes > 0 || book.totalPagesRead > 0,
+        ),
+      )
     } catch (err) {
       console.error('Failed to load book history.', err)
       setBookReads([])
@@ -175,59 +252,49 @@ const LogReading = () => {
           ? parseInt(newBookTotalPages, 10)
           : undefined
 
-        const bookRes = await fetch(`${API_BASE}/api/books`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            title: bookTitle,
-            totalPages: totalPages || undefined,
-          }),
-        })
-
-        const bookData = await bookRes.json()
-
-        if (!bookRes.ok) {
-          setErrors({ submit: bookData.error || 'Failed to save the book. Please try again.' })
+        try {
+          const { book } = await createOrReuseBook(userId, bookTitle, totalPages)
+          bookId = book.bookId
+          bookTitle = book.title || bookTitle
+        } catch (bookErr) {
+          console.error(bookErr)
+          setErrors({
+            submit: 'Failed to save the book. Please try again.',
+          })
           return
         }
-
-        bookId = bookData.book?.bookId
-        bookTitle = bookData.book?.title || bookTitle
       }
 
-      const body = {
-        userId,
-        minutesRead: parseInt(minutes, 10),
-        sessionDate: sessionDate || getToday(),
-        bookId: bookId || undefined,
-        pagesRead: pages.trim() ? parseInt(pages, 10) : undefined,
-        finishedBook,
-      }
+      const { data: rpcData, error: rpcErr } = await supabase.rpc(
+        'log_reading_session',
+        {
+          p_minutes_read: parseInt(minutes, 10),
+          p_session_date: sessionDate || getToday(),
+          p_book_id: bookId || null,
+          p_pages_read: pages.trim() ? parseInt(pages, 10) : null,
+          p_finished_book: finishedBook,
+        },
+      )
 
-      const res = await fetch(`${API_BASE}/api/sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setErrors({ submit: data.error || 'Failed to log reading. Please try again.' })
+      if (rpcErr) {
+        setErrors({
+          submit:
+            rpcErr.message ||
+            'Failed to log reading. Please try again.',
+        })
         return
       }
 
       await Promise.all([
         loadBooks(),
         loadBookHistory(),
-        syncAfterSession(data),
+        syncAfterSession(rpcData),
       ])
 
       setSubmitSuccess(true)
       setSuccessSummary({
         bookTitle,
-        newlyCompleted: data.newlyCompleted ?? [],
+        newlyCompleted: rpcData?.newlyCompleted ?? [],
       })
       setMinutes('')
       setPages('')
@@ -238,7 +305,7 @@ const LogReading = () => {
       setFinishedBook(false)
     } catch {
       setErrors({
-        submit: 'Could not reach the server. Make sure the backend is running.',
+        submit: 'Something went wrong. Check your connection and try again.',
       })
     } finally {
       setIsSubmitting(false)

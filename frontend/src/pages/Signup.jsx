@@ -1,43 +1,77 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../utils/supabase";
 import { useApp } from "../context/AppContext";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { login, apiBase } = useApp();
+  const { authReady } = useApp();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${apiBase}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Signup failed.");
+      const u = username.trim();
+      const em = email.trim().toLowerCase();
+      if (!u) {
+        setError("Username is required.");
+        return;
+      }
+      if (!em) {
+        setError("Email is required.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters.");
         return;
       }
 
-      login(data);
-      navigate("/");
-    } catch (err) {
-      setError("Unable to connect to the server.");
+      const { data, error: signErr } = await supabase.auth.signUp({
+        email: em,
+        password,
+        options: {
+          data: {
+            username: u,
+            display_name: u,
+          },
+        },
+      });
+
+      if (signErr) {
+        setError(signErr.message || "Signup failed.");
+        return;
+      }
+
+      if (data.session) {
+        navigate("/");
+      } else {
+        setInfo(
+          "Check your email to confirm your account, then sign in here.",
+        );
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-[#8a8178]">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
@@ -52,6 +86,7 @@ const Signup = () => {
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          autoComplete="username"
         />
 
         <input
@@ -60,6 +95,7 @@ const Signup = () => {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
         />
 
         <input
@@ -68,16 +104,18 @@ const Signup = () => {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
         />
 
         {error && <p className="text-red-600">{error}</p>}
+        {info && <p className="text-[#5a6b4a]">{info}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
           className="w-full rounded bg-[#8c6b4a] p-3 font-semibold text-white"
         >
-          {isSubmitting ? "Creating account..." : "Sign up"}
+          {isSubmitting ? "Creating account…" : "Sign up"}
         </button>
 
         <p className="text-sm">

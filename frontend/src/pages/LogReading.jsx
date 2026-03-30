@@ -134,7 +134,7 @@ const LogReading = () => {
       const [booksRes, sessRes] = await Promise.all([
         supabase.from('books').select('*').eq('user_id', userId),
         supabase
-          .from('reading_sessions')
+          .from('sessions')
           .select('book_id, minutes_read, pages_read, session_date')
           .eq('user_id', userId)
           .not('book_id', 'is', null),
@@ -265,36 +265,49 @@ const LogReading = () => {
         }
       }
 
-      const { data: rpcData, error: rpcErr } = await supabase.rpc(
-        'log_reading_session',
-        {
-          p_minutes_read: parseInt(minutes, 10),
-          p_session_date: sessionDate || getToday(),
-          p_book_id: bookId || null,
-          p_pages_read: pages.trim() ? parseInt(pages, 10) : null,
-          p_finished_book: finishedBook,
-        },
-      )
+      const { error: sessionErr } = await supabase.from('sessions').insert({
+        user_id: userId,
+        book_id: bookId || null,
+        minutes_read: parseInt(minutes, 10),
+        pages_read: pages.trim() ? parseInt(pages, 10) : null,
+        session_date: sessionDate || getToday(),
+      })
 
-      if (rpcErr) {
+      if (sessionErr) {
         setErrors({
           submit:
-            rpcErr.message ||
+            sessionErr.message ||
             'Failed to log reading. Please try again.',
         })
         return
       }
 
+      if (finishedBook && bookId) {
+        const { error: bookErr } = await supabase
+          .from('books')
+          .update({
+            is_finished: true,
+            finished_at: sessionDate || getToday(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('book_id', bookId)
+          .eq('user_id', userId)
+
+        if (bookErr) {
+          console.error(bookErr)
+        }
+      }
+
       await Promise.all([
         loadBooks(),
         loadBookHistory(),
-        syncAfterSession(rpcData),
+        syncAfterSession(),
       ])
 
       setSubmitSuccess(true)
       setSuccessSummary({
         bookTitle,
-        newlyCompleted: rpcData?.newlyCompleted ?? [],
+        newlyCompleted: [],
       })
       setMinutes('')
       setPages('')

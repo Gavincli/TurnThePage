@@ -38,7 +38,27 @@ const mapGoal = (goal, index) => {
   };
 };
 
-/** Map joined user_goals + goal_templates row to API-shaped goal */
+/** Map public.goals row to the shape expected by mapGoal / Goals page */
+function mapGoalsTableRow(row) {
+  const freq = row.frequency || "daily";
+  const period =
+    freq === "all_time" ? "monthly" : freq === "weekly" ? "weekly" : "daily";
+  const pct = Number(row.percent_complete ?? 0);
+  return {
+    templateId: row.goal_id,
+    title: row.goal_title,
+    description: "",
+    period,
+    points: 0,
+    target: 100,
+    progress: Math.round(pct),
+    isCompleted: row.is_completed,
+    completedAt: row.date_finished,
+    percentComplete: pct,
+  };
+}
+
+/** Fallback: user_goals + goal_templates (filled for every user at signup) */
 function mapUserGoalFromDb(row) {
   const gt = row.goal_templates;
   const template = Array.isArray(gt) ? gt[0] : gt;
@@ -208,7 +228,7 @@ export const AppProvider = ({ children }) => {
       const [{ data: sessions, error: sErr }, { count: finishedCount, error: cErr }] =
         await Promise.all([
           supabase
-            .from("reading_sessions")
+            .from("sessions")
             .select("minutes_read, session_date")
             .eq("user_id", userId),
           supabase
@@ -279,7 +299,20 @@ export const AppProvider = ({ children }) => {
     try {
       setGoalsLoading(true);
 
-      const { data, error } = await supabase
+      const { data: legacyGoals, error: goalsErr } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("priority_order", { ascending: true });
+
+      if (goalsErr) throw goalsErr;
+
+      if (legacyGoals && legacyGoals.length > 0) {
+        applyGoals(legacyGoals.map(mapGoalsTableRow));
+        return;
+      }
+
+      const { data: ugRows, error: ugErr } = await supabase
         .from("user_goals")
         .select(
           `
@@ -299,9 +332,9 @@ export const AppProvider = ({ children }) => {
         )
         .eq("user_id", userId);
 
-      if (error) throw error;
+      if (ugErr) throw ugErr;
 
-      const withOrder = (data || [])
+      const ordered = (ugRows || [])
         .map((row) => {
           const g = mapUserGoalFromDb(row);
           if (!g) return null;
@@ -313,7 +346,7 @@ export const AppProvider = ({ children }) => {
         .sort((a, b) => a.displayOrder - b.displayOrder);
 
       applyGoals(
-        withOrder.map((item) => {
+        ordered.map((item) => {
           const { displayOrder, ...goal } = item;
           void displayOrder;
           return goal;
@@ -332,21 +365,13 @@ export const AppProvider = ({ children }) => {
     await Promise.all([loadStats(), loadCurrentBooks(), loadGoals()]);
   }, [loadCurrentBooks, loadGoals, loadStats, userId]);
 
-  const syncAfterSession = useCallback(
-    async (sessionResult) => {
-      if (!userId) return;
+  const syncAfterSession = useCallback(async () => {
+    if (!userId) return;
 
-      if (sessionResult?.goals) {
-        applyGoals(sessionResult.goals);
-      } else {
-        await loadGoals();
-      }
-
-      setNewlyCompletedGoals(sessionResult?.newlyCompleted ?? []);
-      await Promise.all([loadStats(), loadCurrentBooks()]);
-    },
-    [applyGoals, loadCurrentBooks, loadGoals, loadStats, userId],
-  );
+    await loadGoals();
+    setNewlyCompletedGoals([]);
+    await Promise.all([loadStats(), loadCurrentBooks()]);
+  }, [loadCurrentBooks, loadGoals, loadStats, userId]);
 
   useEffect(() => {
     if (userId) {

@@ -5,58 +5,25 @@ import HamburgerMenu from '../components/HamburgerMenu'
 import BottomNav from '../components/BottomNav'
 import MuseumBackground from '../components/MuseumBackground'
 import { useApp } from '../context/AppContext'
-import { supabase } from '../utils/supabase'
-import { aggregateBookHistory, mapBookRow } from '../utils/booksDb'
+import { mapBookRow } from '../utils/booksDb'
 
 async function createOrReuseBook(userId, title, totalPagesOpt) {
   const trimmed = title.trim()
-  const { data: existingList, error: listErr } = await supabase
-    .from('books')
-    .select('*')
-    .eq('user_id', userId)
-
-  if (listErr) throw listErr
-
-  const match = existingList?.find(
-    (b) => b.title.trim().toLowerCase() === trimmed.toLowerCase(),
-  )
-
-  if (match) {
-    if (
-      totalPagesOpt != null &&
-      Number(match.total_pages) !== Number(totalPagesOpt)
-    ) {
-      const { data: updated, error: upErr } = await supabase
-        .from('books')
-        .update({
-          total_pages: totalPagesOpt,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('book_id', match.book_id)
-        .select()
-        .single()
-
-      if (upErr) throw upErr
-      return { book: mapBookRow(updated), wasCreated: false }
-    }
-    return { book: mapBookRow(match), wasCreated: false }
-  }
-
-  const bookId = crypto.randomUUID()
-  const { data: inserted, error: insErr } = await supabase
-    .from('books')
-    .insert({
-      book_id: bookId,
-      user_id: userId,
+  const response = await fetch('/api/books', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId,
       title: trimmed,
-      total_pages: totalPagesOpt ?? null,
-      is_finished: false,
-    })
-    .select()
-    .single()
+      totalPages: totalPagesOpt ?? null,
+    }),
+  })
 
-  if (insErr) throw insErr
-  return { book: mapBookRow(inserted), wasCreated: true }
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Failed to create or reuse book')
+  }
+  return payload
 }
 
 const getToday = () => new Date().toISOString().slice(0, 10)
@@ -106,15 +73,14 @@ const LogReading = () => {
     }
     setIsBooksLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('*')
-        .eq('user_id', userId)
-        .order('is_finished', { ascending: true })
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setBooks((data ?? []).map(mapBookRow))
+      const response = await fetch(
+        `/api/books?userId=${encodeURIComponent(userId)}&mode=current`,
+      )
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to load books')
+      }
+      setBooks((payload?.books || []).map(mapBookRow))
     } catch (err) {
       console.error('Failed to load books for Log Reading.', err)
       setBooks([])
@@ -131,22 +97,15 @@ const LogReading = () => {
     }
     setIsHistoryLoading(true)
     try {
-      const [booksRes, sessRes] = await Promise.all([
-        supabase.from('books').select('*').eq('user_id', userId),
-        supabase
-          .from('sessions')
-          .select('book_id, minutes_read, pages_read, session_date')
-          .eq('user_id', userId)
-          .not('book_id', 'is', null),
-      ])
-
-      if (booksRes.error) throw booksRes.error
-      if (sessRes.error) throw sessRes.error
-
-      const history = aggregateBookHistory(
-        booksRes.data ?? [],
-        sessRes.data ?? [],
+      const response = await fetch(
+        `/api/books?userId=${encodeURIComponent(userId)}&mode=history`,
       )
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to load book history')
+      }
+
+      const history = payload?.books || []
       setBookReads(
         history.filter(
           (book) => book.totalMinutes > 0 || book.totalPagesRead > 0,
@@ -253,7 +212,11 @@ const LogReading = () => {
           : undefined
 
         try {
-          const { book } = await createOrReuseBook(userId, bookTitle, totalPages)
+          const { book } = await createOrReuseBook(
+            userId,
+            bookTitle,
+            totalPages,
+          )
           bookId = book.bookId
           bookTitle = book.title || bookTitle
         } catch (bookErr) {
@@ -265,49 +228,44 @@ const LogReading = () => {
         }
       }
 
-      const { error: sessionErr } = await supabase.from('sessions').insert({
-        user_id: userId,
-        book_id: bookId || null,
-        minutes_read: parseInt(minutes, 10),
-        pages_read: pages.trim() ? parseInt(pages, 10) : null,
-        session_date: sessionDate || getToday(),
+      const sessionResponse = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          minutesRead: parseInt(minutes, 10),
+          sessionDate: sessionDate || getToday(),
+          bookId: bookId || null,
+          pagesRead: pages.trim() ? parseInt(pages, 10) : null,
+          finishedBook,
+        }),
       })
 
-      if (sessionErr) {
+      const sessionPayload = await sessionResponse
+        .json()
+        .catch(() => ({}))
+
+      if (!sessionResponse.ok) {
         setErrors({
           submit:
-            sessionErr.message ||
+            sessionPayload?.error ||
             'Failed to log reading. Please try again.',
         })
         return
       }
 
-      if (finishedBook && bookId) {
-        const { error: bookErr } = await supabase
-          .from('books')
-          .update({
-            is_finished: true,
-            finished_at: sessionDate || getToday(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('book_id', bookId)
-          .eq('user_id', userId)
-
-        if (bookErr) {
-          console.error(bookErr)
-        }
-      }
+      const newlyCompleted = sessionPayload?.newlyCompleted || []
 
       await Promise.all([
         loadBooks(),
         loadBookHistory(),
-        syncAfterSession(),
+        syncAfterSession({ newlyCompleted }),
       ])
 
       setSubmitSuccess(true)
       setSuccessSummary({
         bookTitle,
-        newlyCompleted: [],
+        newlyCompleted,
       })
       setMinutes('')
       setPages('')

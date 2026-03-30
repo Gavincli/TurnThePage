@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppProvider } from "./context/AppContext";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { AppProvider, useApp } from "./context/AppContext";
 
 const Home = lazy(() => import("./pages/Home"));
 const Goals = lazy(() => import("./pages/Goals"));
@@ -27,20 +27,90 @@ function PageFallback() {
   );
 }
 
+function ProtectedRoute({ children }) {
+  const { authReady, userId } = useApp();
+  if (!authReady) return <PageFallback />;
+  if (!userId) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function GuestOnlyRoute({ children }) {
+  const { authReady, userId } = useApp();
+  if (!authReady) return <PageFallback />;
+  if (userId) return <Navigate to="/" replace />;
+  return children;
+}
+
 function App() {
   return (
     <AppProvider>
       <BrowserRouter>
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/goals" element={<Goals />} />
-            <Route path="/read-now" element={<ReadNow />} />
-            <Route path="/log-reading" element={<LogReading />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/avatar" element={<AvatarSelect />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/goals"
+              element={
+                <ProtectedRoute>
+                  <Goals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/read-now"
+              element={
+                <ProtectedRoute>
+                  <ReadNow />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/log-reading"
+              element={
+                <ProtectedRoute>
+                  <LogReading />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shop"
+              element={
+                <ProtectedRoute>
+                  <Shop />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/avatar"
+              element={
+                <ProtectedRoute>
+                  <AvatarSelect />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <GuestOnlyRoute>
+                  <Login />
+                </GuestOnlyRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <GuestOnlyRoute>
+                  <Signup />
+                </GuestOnlyRoute>
+              }
+            />
           </Routes>
         </Suspense>
       </BrowserRouter>

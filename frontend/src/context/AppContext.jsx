@@ -43,6 +43,8 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem("user");
     return saved ? JSON.parse(saved) : null;
   });
+  /** False until initial session check finishes (localStorage token + /api/auth/me). */
+  const [authReady, setAuthReady] = useState(false);
 
   const userId = user?.userId || null;
 
@@ -85,6 +87,36 @@ export const AppProvider = ({ children }) => {
     setGoalProgress([]);
     setNewlyCompletedGoals([]);
   }, []);
+
+  // Validate stored token on load (refresh / expired token cleanup).
+  useEffect(() => {
+    const bootstrap = async () => {
+      const storedToken = localStorage.getItem("token");
+      if (!storedToken) {
+        setAuthReady(true);
+        return;
+      }
+      try {
+        const res = await fetch(`${API}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setUser(data.user);
+            localStorage.setItem("user", JSON.stringify(data.user));
+          }
+        } else {
+          logout();
+        }
+      } catch {
+        logout();
+      } finally {
+        setAuthReady(true);
+      }
+    };
+    bootstrap();
+  }, [logout]);
 
   const applyGoals = useCallback((goals) => {
     const mapped = (goals || []).map(mapGoal);
@@ -211,6 +243,7 @@ export const AppProvider = ({ children }) => {
   );
 
   useEffect(() => {
+    if (!authReady) return;
     if (userId) {
       refreshAppData();
     } else {
@@ -218,13 +251,14 @@ export const AppProvider = ({ children }) => {
       setBooksLoading(false);
       setGoalsLoading(false);
     }
-  }, [refreshAppData, userId]);
+  }, [authReady, refreshAppData, userId]);
 
   const value = {
     apiBase: API,
     token,
     user,
     userId,
+    authReady,
     login,
     logout,
     currentStreak,

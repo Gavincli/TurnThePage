@@ -70,7 +70,7 @@ router.post("/signup", async (req, res) => {
         user_id, username, email, password_hash, created_at, is_active, display_name
       )
       VALUES ($1, $2, $3, $4, NOW(), true, $2)
-      RETURNING user_id, username, email, display_name, selected_avatar
+      RETURNING user_id, username, email, display_name
       `,
       [userId, cleanUsername, cleanEmail, passwordHash],
     );
@@ -86,7 +86,7 @@ router.post("/signup", async (req, res) => {
         username: user.username,
         email: user.email,
         displayName: user.display_name,
-        selectedAvatar: user.selected_avatar,
+        selectedAvatar: user.selected_avatar ?? null,
       },
     });
   } catch (err) {
@@ -108,7 +108,7 @@ router.post("/login", async (req, res) => {
   try {
     const result = await query(
       `
-      SELECT user_id, username, email, password_hash, display_name, selected_avatar
+      SELECT user_id, username, email, password_hash, display_name
       FROM users
       WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)
       LIMIT 1
@@ -141,7 +141,7 @@ router.post("/login", async (req, res) => {
         username: user.username,
         email: user.email,
         displayName: user.display_name,
-        selectedAvatar: user.selected_avatar,
+        selectedAvatar: user.selected_avatar ?? null,
       },
     });
   } catch (err) {
@@ -154,7 +154,7 @@ router.get("/me", requireAuth, async (req, res) => {
   try {
     const result = await query(
       `
-      SELECT user_id, username, email, display_name, selected_avatar
+      SELECT user_id, username, email, display_name
       FROM users
       WHERE user_id = $1
       LIMIT 1
@@ -174,7 +174,7 @@ router.get("/me", requireAuth, async (req, res) => {
         username: user.username,
         email: user.email,
         displayName: user.display_name,
-        selectedAvatar: user.selected_avatar,
+        selectedAvatar: user.selected_avatar ?? null,
       },
     });
   } catch (err) {

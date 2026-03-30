@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import MuseumBackground from "../components/MuseumBackground";
 
@@ -31,7 +31,7 @@ const Login = () => {
       }
 
       login(data);
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err) {
       setError("Unable to connect to the server.");
     } finally {
@@ -53,22 +53,42 @@ const Login = () => {
           onSubmit={handleSubmit}
           className="space-y-4 rounded-[2rem] border border-[#eeebe4] bg-white/90 backdrop-blur-md p-8 shadow-[0_20px_60px_rgba(71,63,55,0.1)]"
         >
-          <input
-            className="w-full rounded-xl border border-[#dcd7d0] bg-white/70 px-4 py-3 text-[#2b2724] placeholder-[#a09890] outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
-            placeholder="Email or username"
-            value={emailOrUsername}
-            onChange={(e) => setEmailOrUsername(e.target.value)}
-          />
+          <div>
+            <label htmlFor="login-email" className="mb-1.5 block text-sm font-bold text-[#6b645d]">
+              Email or username
+            </label>
+            <input
+              id="login-email"
+              className="w-full rounded-xl border border-[#dcd7d0] bg-white/70 px-4 py-3 text-[#2b2724] placeholder-[#a09890] outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
+              placeholder="Email or username"
+              value={emailOrUsername}
+              onChange={(e) => setEmailOrUsername(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </div>
 
-          <input
-            className="w-full rounded-xl border border-[#dcd7d0] bg-white/70 px-4 py-3 text-[#2b2724] placeholder-[#a09890] outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div>
+            <label htmlFor="login-password" className="mb-1.5 block text-sm font-bold text-[#6b645d]">
+              Password
+            </label>
+            <input
+              id="login-password"
+              className="w-full rounded-xl border border-[#dcd7d0] bg-white/70 px-4 py-3 text-[#2b2724] placeholder-[#a09890] outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

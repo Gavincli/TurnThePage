@@ -161,7 +161,7 @@ const Goals = () => {
             {/* Soft background illustration */}
             <div className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply transition-opacity duration-700 sm:opacity-50">
               <img 
-                src="/library.png" 
+                src="/favicon.svg" 
                 alt="" 
                 className="h-full w-full object-cover object-[center_20%]"
                 style={{ maskImage: 'linear-gradient(to right, transparent 10%, black 80%)', WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)' }}
@@ -269,7 +269,7 @@ const Goals = () => {
             ) : filteredGoals.length === 0 ? (
               <div className="rounded-[1.4rem] border border-[#eeebe4] bg-white px-8 py-10 text-center shadow-sm">
                 <img 
-                  src="/open_watercolor_book.png" 
+                  src="/favicon.svg" 
                   alt="" 
                   className="mx-auto h-32 w-32 object-contain opacity-80 mix-blend-multiply drop-shadow-sm"
                 />

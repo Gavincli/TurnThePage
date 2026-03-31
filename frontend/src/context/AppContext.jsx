@@ -84,7 +84,9 @@ function mapUserGoalFromDb(row) {
 }
 
 export const AppProvider = ({ children }) => {
+  const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
+  /** False until initial session check finishes. */
   const [authReady, setAuthReady] = useState(false);
 
   const userId = user?.userId || null;
@@ -156,6 +158,8 @@ export const AppProvider = ({ children }) => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      const accessToken = session?.access_token ?? "";
+      if (!cancelled) setToken(accessToken);
       if (!cancelled && session?.user?.id) {
         await loadUserProfile(session.user.id);
       }
@@ -169,8 +173,10 @@ export const AppProvider = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (cancelled) return;
       if (session?.user?.id) {
+        setToken(session?.access_token ?? "");
         await loadUserProfile(session.user.id);
       } else {
+        setToken("");
         setUser(null);
         setCurrentStreak(0);
         setTodayMinutes(0);
@@ -192,6 +198,7 @@ export const AppProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
+    setToken("");
     setUser(null);
     setCurrentStreak(0);
     setTodayMinutes(0);
@@ -374,6 +381,7 @@ export const AppProvider = ({ children }) => {
   }, [loadCurrentBooks, loadGoals, loadStats, userId]);
 
   useEffect(() => {
+    if (!authReady) return;
     if (userId) {
       refreshAppData();
     } else if (authReady) {
@@ -386,6 +394,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     authReady,
     user,
+    token,
     userId,
     logout,
     refreshUserProfile: () =>

@@ -48,7 +48,7 @@ const Home = () => {
   const currentReading = currentBooks[0]?.title
 
   return (
-    <div className="relative min-h-screen bg-white pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
+    <div className="relative min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] pb-24 md:pb-12 font-sans overflow-x-hidden text-[#2b2724]">
       <MuseumBackground />
       <header className="sticky top-0 z-30 border-b border-[#e8e4db] bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
@@ -208,9 +208,11 @@ const Home = () => {
           {/* Resources Row */}
           <section className="mb-8">
             <div className="mb-4 pl-1">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#8a8178]">
-                Resources
-              </h3>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#e0dbd3] bg-white px-4 py-1.5 shadow-sm">
+                <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#4a4542]">
+                  Resources
+                </h3>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <button
@@ -251,7 +253,7 @@ const Home = () => {
       </main>
 
       <footer className="relative z-10 mt-12 hidden border-t border-[#e8e4db] md:block">
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8a8178] sm:px-6 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 text-center text-xs font-bold uppercase tracking-widest text-[#6b645d] sm:px-6 lg:px-10">
           Turn The Page
         </div>
       </footer>

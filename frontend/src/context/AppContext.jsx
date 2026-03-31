@@ -235,7 +235,7 @@ export const AppProvider = ({ children }) => {
       const [{ data: sessions, error: sErr }, { count: finishedCount, error: cErr }] =
         await Promise.all([
           supabase
-            .from("sessions")
+            .from("reading_sessions")
             .select("minutes_read, session_date")
             .eq("user_id", userId),
           supabase

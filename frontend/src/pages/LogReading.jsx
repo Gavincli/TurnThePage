@@ -134,7 +134,7 @@ const LogReading = () => {
       const [booksRes, sessRes] = await Promise.all([
         supabase.from('books').select('*').eq('user_id', userId),
         supabase
-          .from('sessions')
+          .from('reading_sessions')
           .select('book_id, minutes_read, pages_read, session_date')
           .eq('user_id', userId)
           .not('book_id', 'is', null),
@@ -265,7 +265,7 @@ const LogReading = () => {
         }
       }
 
-      const { error: sessionErr } = await supabase.from('sessions').insert({
+      const { error: sessionErr } = await supabase.from('reading_sessions').insert({
         user_id: userId,
         book_id: bookId || null,
         minutes_read: parseInt(minutes, 10),

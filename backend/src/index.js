@@ -1,14 +1,13 @@
+// Load .env before any route module — routes import db, which reads DATABASE_URL.
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const goalsRouter = require("./routes/goals");
 const sessionsRouter = require("./routes/sessions");
 const booksRouter = require("./routes/books");
 const statsRouter = require("./routes/stats");
 const authRouter = require("./routes/auth");
-
-// Load environment variables from .env so PORT and DATABASE_URL are available.
-dotenv.config();
 
 const app = express();
 

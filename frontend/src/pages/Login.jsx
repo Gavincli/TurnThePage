@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../utils/supabase";
 import { useApp } from "../context/AppContext";
 import MuseumBackground from "../components/MuseumBackground";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, apiBase } = useApp();
-  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const { authReady } = useApp();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,27 +18,51 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${apiBase}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emailOrUsername, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Login failed.");
+      const raw = username.trim();
+      if (!raw || !password) {
+        setError("Username and password are required.");
         return;
       }
 
-      login(data);
-      navigate(from, { replace: true });
-    } catch (err) {
-      setError("Unable to connect to the server.");
+      const { data: rows, error: lookupErr } = await supabase.rpc(
+        "lookup_login_email",
+        { p_login: raw },
+      );
+      if (lookupErr) {
+        setError("Could not look up account.");
+        return;
+      }
+      const loginEmail = rows?.[0]?.email;
+      if (!loginEmail) {
+        setError("Invalid login credentials.");
+        return;
+      }
+
+      const { error: signErr } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+      });
+
+      if (signErr) {
+        setError("Invalid login credentials.");
+        return;
+      }
+
+      navigate("/");
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-[#8a8178]">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] flex items-center justify-center p-6 overflow-hidden">
@@ -54,15 +79,15 @@ const Login = () => {
           className="space-y-4 rounded-[2rem] border border-[#eeebe4] bg-white/90 backdrop-blur-md p-8 shadow-[0_20px_60px_rgba(71,63,55,0.1)]"
         >
           <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-bold text-[#6b645d]">
-              Email or username
+            <label htmlFor="login-username" className="mb-1.5 block text-sm font-bold text-[#6b645d]">
+              Username
             </label>
             <input
-              id="login-email"
+              id="login-username"
               className="w-full rounded-xl border border-[#dcd7d0] bg-white/70 px-4 py-3 text-[#2b2724] placeholder-[#a09890] outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
-              placeholder="Email or username"
-              value={emailOrUsername}
-              onChange={(e) => setEmailOrUsername(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               required
             />

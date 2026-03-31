@@ -5,10 +5,11 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { supabase } from "../utils/supabase";
+import { computeStatsFromSessions } from "../utils/readingStats";
+import { mapBookRow } from "../utils/booksDb";
 
 const AppContext = createContext();
-
-const API = "http://localhost:4000";
 
 const GOAL_ICONS = {
   daily: "☀️",
@@ -37,13 +38,55 @@ const mapGoal = (goal, index) => {
   };
 };
 
+/** Map public.goals row to the shape expected by mapGoal / Goals page */
+function mapGoalsTableRow(row) {
+  const freq = row.frequency || "daily";
+  const period =
+    freq === "all_time" ? "monthly" : freq === "weekly" ? "weekly" : "daily";
+  const pct = Number(row.percent_complete ?? 0);
+  return {
+    templateId: row.goal_id,
+    title: row.goal_title,
+    description: "",
+    period,
+    points: 0,
+    target: 100,
+    progress: Math.round(pct),
+    isCompleted: row.is_completed,
+    completedAt: row.date_finished,
+    percentComplete: pct,
+  };
+}
+
+/** Fallback: user_goals + goal_templates (filled for every user at signup) */
+function mapUserGoalFromDb(row) {
+  const gt = row.goal_templates;
+  const template = Array.isArray(gt) ? gt[0] : gt;
+  if (!template) return null;
+  const target = Number(template.target_value ?? 0);
+  const progress = Number(row.progress ?? 0);
+  const percentComplete =
+    target > 0
+      ? Math.round((progress / target) * 1000) / 10
+      : Number(row.percentComplete ?? 0);
+  return {
+    templateId: template.template_id,
+    title: template.title,
+    description: template.description,
+    period: template.period,
+    points: template.points_value,
+    target,
+    progress,
+    isCompleted: row.is_completed,
+    completedAt: row.completed_at,
+    percentComplete,
+  };
+}
+
 export const AppProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("user");
-    return saved ? JSON.parse(saved) : null;
-  });
-  /** False until initial session check finishes (localStorage token + /api/auth/me). */
+  const [token, setToken] = useState("");
+  const [user, setUser] = useState(null);
+  /** False until initial session check finishes. */
   const [authReady, setAuthReady] = useState(false);
 
   const userId = user?.userId || null;
@@ -64,19 +107,99 @@ export const AppProvider = ({ children }) => {
 
   const [newlyCompletedGoals, setNewlyCompletedGoals] = useState([]);
 
-  const login = useCallback(({ token, user }) => {
-    setToken(token);
-    setUser(user);
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
+  const loadUserProfile = useCallback(async (id) => {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const { data, error } = await supabase
+        .from("users")
+        .select(
+          "user_id, username, email, display_name, selected_avatar, points_earned",
+        )
+        .eq("user_id", id)
+        .maybeSingle();
+
+      if (!error && data) {
+        setUser({
+          userId: data.user_id,
+          username: data.username,
+          email: data.email,
+          displayName: data.display_name,
+          selectedAvatar: data.selected_avatar,
+          pointsEarned: data.points_earned,
+        });
+        return;
+      }
+
+      await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
+    }
+
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    if (authUser?.id === id) {
+      const fallbackEmail = authUser.email ?? "";
+      setUser({
+        userId: id,
+        username: fallbackEmail.split("@")[0] || "reader",
+        email: fallbackEmail,
+        displayName: fallbackEmail.split("@")[0] || "reader",
+        selectedAvatar: null,
+        pointsEarned: 0,
+      });
+      return;
+    }
+
+    setUser(null);
   }, []);
 
-  const logout = useCallback(() => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const init = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token ?? "";
+      if (!cancelled) setToken(accessToken);
+      if (!cancelled && session?.user?.id) {
+        await loadUserProfile(session.user.id);
+      }
+      if (!cancelled) setAuthReady(true);
+    };
+
+    init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (cancelled) return;
+      if (session?.user?.id) {
+        setToken(session?.access_token ?? "");
+        await loadUserProfile(session.user.id);
+      } else {
+        setToken("");
+        setUser(null);
+        setCurrentStreak(0);
+        setTodayMinutes(0);
+        setWeekMinutes(0);
+        setTotalMinutes(0);
+        setBooksFinished(0);
+        setCurrentBooks([]);
+        setGoalsCompleted(0);
+        setGoalProgress([]);
+        setNewlyCompletedGoals([]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [loadUserProfile]);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setToken("");
     setUser(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
     setCurrentStreak(0);
     setTodayMinutes(0);
     setWeekMinutes(0);
@@ -87,36 +210,6 @@ export const AppProvider = ({ children }) => {
     setGoalProgress([]);
     setNewlyCompletedGoals([]);
   }, []);
-
-  // Validate stored token on load (refresh / expired token cleanup).
-  useEffect(() => {
-    const bootstrap = async () => {
-      const storedToken = localStorage.getItem("token");
-      if (!storedToken) {
-        setAuthReady(true);
-        return;
-      }
-      try {
-        const res = await fetch(`${API}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setUser(data.user);
-            localStorage.setItem("user", JSON.stringify(data.user));
-          }
-        } else {
-          logout();
-        }
-      } catch {
-        logout();
-      } finally {
-        setAuthReady(true);
-      }
-    };
-    bootstrap();
-  }, [logout]);
 
   const applyGoals = useCallback((goals) => {
     const mapped = (goals || []).map(mapGoal);
@@ -139,22 +232,33 @@ export const AppProvider = ({ children }) => {
     try {
       setStatsLoading(true);
 
-      const res = await fetch(`${API}/api/stats?userId=${userId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const [{ data: sessions, error: sErr }, { count: finishedCount, error: cErr }] =
+        await Promise.all([
+          supabase
+            .from("reading_sessions")
+            .select("minutes_read, session_date")
+            .eq("user_id", userId),
+          supabase
+            .from("books")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId)
+            .eq("is_finished", true),
+        ]);
 
-      if (!res.ok) {
-        throw new Error(`Stats fetch failed: ${res.status}`);
-      }
+      if (sErr) throw sErr;
+      if (cErr) throw cErr;
 
-      const data = await res.json();
-      setCurrentStreak(data.streak ?? 0);
-      setTodayMinutes(data.todayMinutes ?? 0);
-      setWeekMinutes(data.weekMinutes ?? 0);
-      setTotalMinutes(data.totalMinutes ?? 0);
-      setBooksFinished(data.booksFinished ?? 0);
+      const stats = computeStatsFromSessions(
+        sessions || [],
+        finishedCount ?? 0,
+      );
+      setCurrentStreak(stats.streak);
+      setTodayMinutes(stats.todayMinutes);
+      setWeekMinutes(stats.weekMinutes);
+      setTotalMinutes(stats.totalMinutes);
+      setBooksFinished(stats.booksFinished);
     } catch (err) {
-      console.error("Failed to load stats from backend.", err);
+      console.error("Failed to load stats from Supabase.", err);
       setCurrentStreak(0);
       setTodayMinutes(0);
       setWeekMinutes(0);
@@ -163,7 +267,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setStatsLoading(false);
     }
-  }, [token, userId]);
+  }, [userId]);
 
   const loadCurrentBooks = useCallback(async () => {
     if (!userId) {
@@ -175,23 +279,22 @@ export const AppProvider = ({ children }) => {
     try {
       setBooksLoading(true);
 
-      const res = await fetch(`${API}/api/books/current?userId=${userId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("is_finished", false)
+        .order("created_at", { ascending: false });
 
-      if (!res.ok) {
-        throw new Error(`Books fetch failed: ${res.status}`);
-      }
-
-      const data = await res.json();
-      setCurrentBooks(data.books ?? []);
+      if (error) throw error;
+      setCurrentBooks((data || []).map(mapBookRow));
     } catch (err) {
-      console.error("Failed to load current books from backend.", err);
+      console.error("Failed to load current books from Supabase.", err);
       setCurrentBooks([]);
     } finally {
       setBooksLoading(false);
     }
-  }, [token, userId]);
+  }, [userId]);
 
   const loadGoals = useCallback(async () => {
     if (!userId) {
@@ -203,64 +306,99 @@ export const AppProvider = ({ children }) => {
     try {
       setGoalsLoading(true);
 
-      const res = await fetch(`${API}/api/goals?userId=${userId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const { data: legacyGoals, error: goalsErr } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("priority_order", { ascending: true });
 
-      if (!res.ok) {
-        throw new Error(`Goals fetch failed: ${res.status}`);
+      if (goalsErr) throw goalsErr;
+
+      if (legacyGoals && legacyGoals.length > 0) {
+        applyGoals(legacyGoals.map(mapGoalsTableRow));
+        return;
       }
 
-      const data = await res.json();
-      applyGoals(data.goals ?? []);
+      const { data: ugRows, error: ugErr } = await supabase
+        .from("user_goals")
+        .select(
+          `
+          progress,
+          is_completed,
+          completed_at,
+          goal_templates (
+            template_id,
+            title,
+            description,
+            period,
+            points_value,
+            target_value,
+            display_order
+          )
+        `,
+        )
+        .eq("user_id", userId);
+
+      if (ugErr) throw ugErr;
+
+      const ordered = (ugRows || [])
+        .map((row) => {
+          const g = mapUserGoalFromDb(row);
+          if (!g) return null;
+          const gt = row.goal_templates;
+          const template = Array.isArray(gt) ? gt[0] : gt;
+          return { ...g, displayOrder: template?.display_order ?? 0 };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.displayOrder - b.displayOrder);
+
+      applyGoals(
+        ordered.map((item) => {
+          const { displayOrder, ...goal } = item;
+          void displayOrder;
+          return goal;
+        }),
+      );
     } catch (err) {
-      console.error("Failed to load goals from backend.", err);
+      console.error("Failed to load goals from Supabase.", err);
       applyGoals([]);
     } finally {
       setGoalsLoading(false);
     }
-  }, [applyGoals, token, userId]);
+  }, [applyGoals, userId]);
 
   const refreshAppData = useCallback(async () => {
     if (!userId) return;
     await Promise.all([loadStats(), loadCurrentBooks(), loadGoals()]);
   }, [loadCurrentBooks, loadGoals, loadStats, userId]);
 
-  const syncAfterSession = useCallback(
-    async (sessionResult) => {
-      if (!userId) return;
+  const syncAfterSession = useCallback(async () => {
+    if (!userId) return;
 
-      if (sessionResult?.goals) {
-        applyGoals(sessionResult.goals);
-      } else {
-        await loadGoals();
-      }
-
-      setNewlyCompletedGoals(sessionResult?.newlyCompleted ?? []);
-      await Promise.all([loadStats(), loadCurrentBooks()]);
-    },
-    [applyGoals, loadCurrentBooks, loadGoals, loadStats, userId],
-  );
+    await loadGoals();
+    setNewlyCompletedGoals([]);
+    await Promise.all([loadStats(), loadCurrentBooks()]);
+  }, [loadCurrentBooks, loadGoals, loadStats, userId]);
 
   useEffect(() => {
     if (!authReady) return;
     if (userId) {
       refreshAppData();
-    } else {
+    } else if (authReady) {
       setStatsLoading(false);
       setBooksLoading(false);
       setGoalsLoading(false);
     }
-  }, [authReady, refreshAppData, userId]);
+  }, [refreshAppData, userId, authReady]);
 
   const value = {
-    apiBase: API,
-    token,
-    user,
-    userId,
     authReady,
-    login,
+    user,
+    token,
+    userId,
     logout,
+    refreshUserProfile: () =>
+      userId ? loadUserProfile(userId) : Promise.resolve(),
     currentStreak,
     todayMinutes,
     weekMinutes,

@@ -1,44 +1,76 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../utils/supabase";
 import { useApp } from "../context/AppContext";
 import MuseumBackground from "../components/MuseumBackground";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { login, apiBase } = useApp();
+  const { authReady } = useApp();
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setInfo("");
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${apiBase}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Signup failed.");
+      const u = username.trim();
+      if (!u) {
+        setError("Username is required.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters.");
         return;
       }
 
-      login(data);
-      navigate("/", { replace: true });
-    } catch (err) {
-      setError("Unable to connect to the server.");
+      // Supabase Auth requires an email; derive a stable placeholder from the username.
+      // This keeps email out of the signup UI while still creating the auth user.
+      const derivedEmail = `${u.toLowerCase()}@turnthepage.local`;
+
+      const { data, error: signErr } = await supabase.auth.signUp({
+        email: derivedEmail,
+        password,
+        options: {
+          data: {
+            username: u,
+            display_name: u,
+          },
+        },
+      });
+
+      if (signErr) {
+        setError(signErr.message || "Signup failed.");
+        return;
+      }
+
+      if (data.session) {
+        navigate("/");
+      } else {
+        setInfo(
+          "Account created. If you can’t sign in immediately, confirm email is disabled in Supabase Auth settings.",
+        );
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-[#8a8178]">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[linear-gradient(to_bottom,_#fefdfb_0%,_#fbf8f2_40%,_#f4ede2_100%)] flex items-center justify-center p-6 overflow-hidden">
@@ -76,22 +108,6 @@ const Signup = () => {
           </div>
 
           <div>
-            <label htmlFor="signup-email" className="mb-1.5 block text-sm font-bold text-[#6b645d]">
-              Email
-            </label>
-            <input
-              id="signup-email"
-              className="w-full rounded-xl border border-[#dcd7d0] bg-white/70 px-4 py-3 text-[#2b2724] placeholder-[#a09890] outline-none transition focus:border-[#8c6b4a] focus:ring-4 focus:ring-[#8c6b4a]/10"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </div>
-
-          <div>
             <label htmlFor="signup-password" className="mb-1.5 block text-sm font-bold text-[#6b645d]">
               Password
             </label>
@@ -113,6 +129,8 @@ const Signup = () => {
               {error}
             </p>
           )}
+
+          {info && <p className="text-[#5a6b4a]">{info}</p>}
 
           <button
             type="submit"

@@ -90,9 +90,20 @@ const AvatarSelect = () => {
             <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-slate-200 bg-white text-5xl shadow-sm">
               {avatarOptions.find((avatar) => avatar.id === selectedAvatar)?.emoji}
             </div>
+            {(() => {
+              const active = avatarOptions.find((a) => a.id === selectedAvatar)
+              if (!active) return null
+              return (
+                <p className="mt-3 flex items-center justify-center gap-1 text-sm font-medium text-slate-700">
+                  {active.name} — {active.description}
+                  <ReadAloud text={`${active.name}. ${active.description}.`} size="xs" />
+                </p>
+              )
+            })()}
 
-            <h2 className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">
+            <h2 className="mt-5 flex items-center justify-center gap-2 text-3xl font-semibold tracking-tight text-slate-900">
               Pick the character that feels like you
+              <ReadAloud text="Pick the character that feels like you. Your avatar will appear on your home page and can be changed anytime." size="sm" />
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">

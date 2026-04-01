@@ -103,8 +103,9 @@ const GoalRow = ({ goal }) => {
           </div>
 
           {!goal.completed && (
-            <p className="mt-5 text-sm leading-6 text-[#6b645d]">
+            <p className="mt-5 flex items-center gap-1 text-sm leading-6 text-[#6b645d]">
               Log reading sessions to move this goal forward.
+              <ReadAloud text="Log reading sessions to move this goal forward." size="xs" />
             </p>
           )}
         </div>

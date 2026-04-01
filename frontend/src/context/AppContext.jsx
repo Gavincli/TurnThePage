@@ -306,19 +306,6 @@ export const AppProvider = ({ children }) => {
     try {
       setGoalsLoading(true);
 
-      const { data: legacyGoals, error: goalsErr } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("user_id", userId)
-        .order("priority_order", { ascending: true });
-
-      if (goalsErr) throw goalsErr;
-
-      if (legacyGoals && legacyGoals.length > 0) {
-        applyGoals(legacyGoals.map(mapGoalsTableRow));
-        return;
-      }
-
       const { data: ugRows, error: ugErr } = await supabase
         .from("user_goals")
         .select(

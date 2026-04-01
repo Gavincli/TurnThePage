@@ -285,20 +285,23 @@ const LogReading = () => {
         }
       }
 
-      const sessionPayload = {
-        user_id: userId,
-        book_id: bookId || null,
-        minutes_read: parseInt(minutes, 10),
-        pages_read: pages.trim() ? parseInt(pages, 10) : null,
-        session_date: sessionDate || getToday(),
-      }
-      console.debug('[LogReading] Inserting reading session.', sessionPayload)
-      const { error: sessionErr } = await supabase
-        .from('reading_sessions')
-        .insert(sessionPayload)
+      console.debug('[LogReading] Calling log_reading_session RPC.', {
+        p_minutes_read: parseInt(minutes, 10),
+        p_session_date: sessionDate || getToday(),
+        p_book_id: bookId || null,
+        p_pages_read: pages.trim() ? parseInt(pages, 10) : null,
+        p_finished_book: finishedBook,
+      })
+      const { error: sessionErr } = await supabase.rpc('log_reading_session', {
+        p_minutes_read: parseInt(minutes, 10),
+        p_session_date: sessionDate || getToday(),
+        p_book_id: bookId || null,
+        p_pages_read: pages.trim() ? parseInt(pages, 10) : null,
+        p_finished_book: finishedBook,
+      })
 
       if (sessionErr) {
-        console.error('[LogReading] Session insert failed.', sessionErr)
+        console.error('[LogReading] Session RPC failed.', sessionErr)
         setErrors({
           submit:
             sessionErr.message ||
@@ -306,24 +309,7 @@ const LogReading = () => {
         })
         return
       }
-      console.info('[LogReading] Session insert successful.')
-
-      if (finishedBook && bookId) {
-        console.debug('[LogReading] Marking book as finished.', { bookId })
-        const { error: bookErr } = await supabase
-          .from('books')
-          .update({
-            is_finished: true,
-            finished_at: sessionDate || getToday(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('book_id', bookId)
-          .eq('user_id', userId)
-
-        if (bookErr) {
-          console.error('[LogReading] Failed to mark book as finished.', bookErr)
-        }
-      }
+      console.info('[LogReading] Session RPC successful.')
 
       await Promise.all([
         loadBooks(),

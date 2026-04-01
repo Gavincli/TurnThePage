@@ -233,6 +233,19 @@ const LogReading = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setErrors({})
+    console.info('[LogReading] Submit started', {
+      userIdPresent: Boolean(userId),
+      bookMode,
+      selectedBookId: selectedBookId || null,
+      sessionDate,
+    })
+
+    if (!userId) {
+      const authMessage = 'You must be logged in to log a reading session.'
+      console.error('[LogReading] Aborting submit: missing authenticated user.')
+      setErrors({ submit: authMessage })
+      return
+    }
 
     if (!validate()) return
 
@@ -243,10 +256,12 @@ const LogReading = () => {
       let bookId = null
       let bookTitle = ''
       let newlyCompleted = []
+      console.debug('[LogReading] Validation passed, preparing payload.')
 
       if (bookMode === 'existing' && selectedBookId) {
         bookId = selectedBookId
         bookTitle = availableBooks.find((book) => book.bookId === bookId)?.title ?? ''
+        console.debug('[LogReading] Using existing book.', { bookId, bookTitle })
       } else if (bookMode === 'new' && newBookTitle.trim()) {
         bookTitle = newBookTitle.trim()
         const totalPages = newBookTotalPages.trim()
@@ -254,13 +269,18 @@ const LogReading = () => {
           : undefined
 
         try {
+          console.debug('[LogReading] Creating or reusing book.', {
+            bookTitle,
+            totalPages: totalPages ?? null,
+          })
           const { book } = await createOrReuseBook(userId, bookTitle, totalPages)
           bookId = book.bookId
           bookTitle = book.title || bookTitle
+          console.debug('[LogReading] Book create/reuse successful.', { bookId, bookTitle })
         } catch (bookErr) {
-          console.error(bookErr)
+          console.error('[LogReading] Book create/reuse failed.', bookErr)
           setErrors({
-            submit: 'Failed to save the book. Please try again.',
+            submit: bookErr?.message || 'Failed to save the book. Please try again.',
           })
           return
         }
@@ -278,20 +298,52 @@ const LogReading = () => {
       )
 
       if (rpcErr) {
+      const sessionPayload = {
+        user_id: userId,
+        book_id: bookId || null,
+        minutes_read: parseInt(minutes, 10),
+        pages_read: pages.trim() ? parseInt(pages, 10) : null,
+        session_date: sessionDate || getToday(),
+      }
+      console.debug('[LogReading] Inserting reading session.', sessionPayload)
+      const { error: sessionErr } = await supabase
+        .from('reading_sessions')
+        .insert(sessionPayload)
+
+      if (sessionErr) {
+        console.error('[LogReading] Session insert failed.', sessionErr)
         setErrors({
           submit:
             rpcErr.message || 'Failed to log reading. Please try again.',
         })
         return
       }
+      console.info('[LogReading] Session insert successful.')
 
       newlyCompleted = rpcData?.newlyCompleted ?? []
+      if (finishedBook && bookId) {
+        console.debug('[LogReading] Marking book as finished.', { bookId })
+        const { error: bookErr } = await supabase
+          .from('books')
+          .update({
+            is_finished: true,
+            finished_at: sessionDate || getToday(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('book_id', bookId)
+          .eq('user_id', userId)
+
+        if (bookErr) {
+          console.error('[LogReading] Failed to mark book as finished.', bookErr)
+        }
+      }
 
       await Promise.all([
         loadBooks(),
         loadBookHistory(),
         syncAfterSession(),
       ])
+      console.debug('[LogReading] Post-submit sync complete.')
 
       setSubmitSuccess(true)
       setSuccessSummary({
@@ -305,12 +357,17 @@ const LogReading = () => {
       setNewBookTitle('')
       setNewBookTotalPages('')
       setFinishedBook(false)
-    } catch {
+      console.info('[LogReading] Submit completed successfully.')
+    } catch (err) {
+      console.error('[LogReading] Unexpected submit failure.', err)
       setErrors({
-        submit: 'Something went wrong. Check your connection and try again.',
+        submit:
+          err?.message ||
+          'Something went wrong. Check your connection and try again.',
       })
     } finally {
       setIsSubmitting(false)
+      console.debug('[LogReading] Submit finished. isSubmitting reset.')
     }
   }
 
@@ -418,7 +475,7 @@ const LogReading = () => {
               }}
             >
               <img
-                src="/library.png"
+                src="/favicon.svg"
                 alt=""
                 loading="lazy"
                 decoding="async"

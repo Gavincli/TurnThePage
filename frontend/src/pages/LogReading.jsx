@@ -368,8 +368,16 @@ const LogReading = () => {
             <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-[#8c6b4a]/10 text-3xl">
               ✓
             </div>
-            <h2 className="mt-4 text-2xl font-serif font-medium text-[#2b2724]">
+            <h2 className="mt-4 flex items-center justify-center gap-2 text-2xl font-serif font-medium text-[#2b2724]">
               Reading logged!
+              <ReadAloud
+                text={
+                  successSummary?.bookTitle
+                    ? `Reading logged! ${successSummary.bookTitle} has been updated.`
+                    : 'Reading logged! Your progress has been saved.'
+                }
+                size="sm"
+              />
             </h2>
             <p className="mt-2 text-sm text-[#6b645d]">
               {successSummary?.bookTitle
@@ -804,8 +812,12 @@ const LogReading = () => {
                       key={r.bookId}
                       className="group grid w-full grid-cols-1 gap-3 rounded-[1.25rem] border border-[#e8e4db] border-l-4 border-l-[#8c6b4a]/30 bg-[#fcfbf8] px-4 py-4 shadow-sm transition-all hover:border-l-[#8c6b4a] hover:border-[#dcd7d0] hover:shadow-md md:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr_1fr_1fr] md:items-center md:gap-2 md:px-5 lg:gap-4"
                     >
-                      <span className="min-w-0 font-serif text-base font-semibold tracking-tight text-[#2b2724] md:text-lg lg:text-xl">
+                      <span className="min-w-0 flex items-center gap-1 font-serif text-base font-semibold tracking-tight text-[#2b2724] md:text-lg lg:text-xl">
                         {r.title}
+                        <ReadAloud
+                          text={`${r.title}. ${formatMinutes(r.totalMinutes)} read${r.totalPagesRead > 0 ? `, ${r.totalPagesRead} pages` : ''}.`}
+                          size="xs"
+                        />
                       </span>
                       {/* Mobile: label-value grid. Desktop: values only in table cells */}
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3 md:contents">

@@ -153,24 +153,32 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     let cancelled = false;
+    let authReadySet = false;
 
-    const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const accessToken = session?.access_token ?? "";
-      if (!cancelled) setToken(accessToken);
-      if (!cancelled && session?.user?.id) {
-        await loadUserProfile(session.user.id);
+    const markAuthReady = () => {
+      if (!cancelled && !authReadySet) {
+        authReadySet = true;
+        setAuthReady(true);
       }
-      if (!cancelled) setAuthReady(true);
     };
 
-    init();
+    // Safety net: if onAuthStateChange never fires (e.g. network stall or
+    // corrupt token that can't be refreshed), unblock the app after 5s.
+    const safetyTimer = setTimeout(() => {
+      if (!authReadySet) {
+        console.warn("Auth init timed out — clearing session and unblocking app.");
+        supabase.auth.signOut().catch(() => {});
+        markAuthReady();
+      }
+    }, 5000);
 
+    // Rely solely on onAuthStateChange for auth init.
+    // Supabase fires INITIAL_SESSION immediately on registration, so we do
+    // NOT also call getSession() + loadUserProfile in a separate init() path,
+    // which previously caused loadUserProfile to run twice on every page load.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (cancelled) return;
       if (session?.user?.id) {
         setToken(session?.access_token ?? "");
@@ -188,10 +196,15 @@ export const AppProvider = ({ children }) => {
         setGoalProgress([]);
         setNewlyCompletedGoals([]);
       }
+      // Mark auth ready after the first event (INITIAL_SESSION or SIGNED_IN).
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        markAuthReady();
+      }
     });
 
     return () => {
       cancelled = true;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [loadUserProfile]);

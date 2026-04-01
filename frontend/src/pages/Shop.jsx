@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import BottomNav from '../components/BottomNav'
 import MuseumBackground from '../components/MuseumBackground'
 import HamburgerMenu from '../components/HamburgerMenu'
+import ReadAloud from '../components/ReadAloud'
 import { useApp } from '../context/AppContext'
 
 const avatarEmojiMap = {
@@ -102,14 +103,24 @@ const Shop = () => {
   
   // Custom Draggable Wearable Position
   const [wearablePos, setWearablePos] = useState(() => {
-    const saved = localStorage.getItem('ttp_shop_wearable_pos')
-    return saved ? JSON.parse(saved) : { x: 50, y: 30 } // default above head
+    try {
+      const saved = localStorage.getItem('ttp_shop_wearable_pos')
+      return saved ? JSON.parse(saved) : { x: 50, y: 30 }
+    } catch {
+      localStorage.removeItem('ttp_shop_wearable_pos')
+      return { x: 50, y: 30 }
+    }
   })
 
   // Draggable Room Items State
   const [placedRoomItems, setPlacedRoomItems] = useState(() => {
-    const saved = localStorage.getItem('ttp_shop_placed_items')
-    return saved ? JSON.parse(saved) : []
+    try {
+      const saved = localStorage.getItem('ttp_shop_placed_items')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      localStorage.removeItem('ttp_shop_placed_items')
+      return []
+    }
   })
 
   const containerRef = useRef(null)
@@ -236,6 +247,7 @@ const Shop = () => {
             </p>
             <h1 className="mt-0.5 flex items-center gap-2 text-3xl font-serif font-medium tracking-tight text-[#2b2724]">
               Shop
+              <ReadAloud text="Shop. Customize your look." size="sm" />
             </h1>
             <p className="mt-1 text-xs sm:text-sm font-medium text-[#8a8178]">
               Customize your look
@@ -387,10 +399,14 @@ const Shop = () => {
                         {item.name}
                       </span>
                     </button>
-                    {isLocked && (
+                    {isLocked ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-2xl">
                         <span className="text-lg drop-shadow">🔒</span>
                         <span className="text-[9px] font-bold text-slate-600 mt-0.5 bg-white/80 rounded-full px-1.5 py-0.5 leading-none">{item.minMinutes}m</span>
+                      </div>
+                    ) : (
+                      <div className="absolute bottom-1 right-1 pointer-events-auto">
+                        <ReadAloud text={item.name} size="xs" />
                       </div>
                     )}
                   </div>
@@ -419,10 +435,14 @@ const Shop = () => {
                         {item.name}
                       </span>
                     </button>
-                    {isLocked && (
+                    {isLocked ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-2xl">
                         <span className="text-lg drop-shadow">🔒</span>
                         <span className="text-[9px] font-bold text-slate-600 mt-0.5 bg-white/80 rounded-full px-1.5 py-0.5 leading-none">{item.minMinutes}m</span>
+                      </div>
+                    ) : !isClear && (
+                      <div className="absolute bottom-1 right-1 pointer-events-auto">
+                        <ReadAloud text={item.name} size="xs" />
                       </div>
                     )}
                   </div>

@@ -4,7 +4,6 @@ import BottomNav from '../components/BottomNav'
 import ReadAloud from '../components/ReadAloud'
 import HamburgerMenu from '../components/HamburgerMenu'
 import MuseumBackground from '../components/MuseumBackground'
-import GoalsAccomplishedSummary from '../components/GoalsAccomplishedSummary'
 
 const goalViews = [
   {
@@ -156,7 +155,6 @@ const Goals = () => {
 
       <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
         <div className="space-y-5">
-          <GoalsAccomplishedSummary />
           <section className="relative overflow-hidden rounded-[2rem] border border-[#eeebe4] bg-white p-5 shadow-[0_8px_32px_rgba(71,63,55,0.04)] sm:p-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,233,222,0.4),transparent_50%)]" />
             

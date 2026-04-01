@@ -448,7 +448,7 @@ const LogReading = () => {
               }}
             >
               <img
-                src="/favicon.svg"
+                src="/library.png"
                 alt=""
                 loading="lazy"
                 decoding="async"

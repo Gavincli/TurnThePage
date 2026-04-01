@@ -81,7 +81,7 @@ const Home = () => {
               {/* Soft background illustration */}
               <div className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply transition-opacity duration-700 sm:opacity-50">
                 <img 
-                  src="/favicon.svg" 
+                  src="/library.png" 
                   alt="" 
                   className="h-full w-full object-cover object-[center_20%]"
                   style={{ maskImage: 'linear-gradient(to right, transparent 10%, black 80%)', WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)' }}
@@ -188,7 +188,7 @@ const Home = () => {
 
               <div className="mt-4 flex flex-1 items-center justify-center p-2">
                 <img 
-                  src="/favicon.svg" 
+                  src="/floating_book.png" 
                   alt="Current reading" 
                   className="w-full max-w-[130px] h-auto object-contain mix-blend-multiply transition-transform duration-700 hover:scale-105 drop-shadow-sm opacity-90 mx-auto"
                 />

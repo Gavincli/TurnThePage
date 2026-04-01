@@ -161,7 +161,7 @@ const Goals = () => {
             {/* Soft background illustration */}
             <div className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply transition-opacity duration-700 sm:opacity-50">
               <img 
-                src="/favicon.svg" 
+                src="/library.png" 
                 alt="" 
                 className="h-full w-full object-cover object-[center_20%]"
                 style={{ maskImage: 'linear-gradient(to right, transparent 10%, black 80%)', WebkitMaskImage: 'linear-gradient(to right, transparent 10%, black 80%)' }}

@@ -306,19 +306,7 @@ export const AppProvider = ({ children }) => {
     try {
       setGoalsLoading(true);
 
-      const { data: legacyGoals, error: goalsErr } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("user_id", userId)
-        .order("priority_order", { ascending: true });
-
-      if (goalsErr) throw goalsErr;
-
-      if (legacyGoals && legacyGoals.length > 0) {
-        applyGoals(legacyGoals.map(mapGoalsTableRow));
-        return;
-      }
-
+      // Prefer user_goals (updated by log_reading_session RPC).
       const { data: ugRows, error: ugErr } = await supabase
         .from("user_goals")
         .select(
@@ -341,24 +329,38 @@ export const AppProvider = ({ children }) => {
 
       if (ugErr) throw ugErr;
 
-      const ordered = (ugRows || [])
-        .map((row) => {
-          const g = mapUserGoalFromDb(row);
-          if (!g) return null;
-          const gt = row.goal_templates;
-          const template = Array.isArray(gt) ? gt[0] : gt;
-          return { ...g, displayOrder: template?.display_order ?? 0 };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.displayOrder - b.displayOrder);
+      if (ugRows && ugRows.length > 0) {
+        const ordered = (ugRows || [])
+          .map((row) => {
+            const g = mapUserGoalFromDb(row);
+            if (!g) return null;
+            const gt = row.goal_templates;
+            const template = Array.isArray(gt) ? gt[0] : gt;
+            return { ...g, displayOrder: template?.display_order ?? 0 };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.displayOrder - b.displayOrder);
 
-      applyGoals(
-        ordered.map((item) => {
-          const { displayOrder, ...goal } = item;
-          void displayOrder;
-          return goal;
-        }),
-      );
+        applyGoals(
+          ordered.map((item) => {
+            const { displayOrder, ...goal } = item;
+            void displayOrder;
+            return goal;
+          }),
+        );
+        return;
+      }
+
+      // Legacy fallback: if user_goals isn't populated yet.
+      const { data: legacyGoals, error: goalsErr } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("priority_order", { ascending: true });
+
+      if (goalsErr) throw goalsErr;
+
+      applyGoals((legacyGoals || []).map(mapGoalsTableRow));
     } catch (err) {
       console.error("Failed to load goals from Supabase.", err);
       applyGoals([]);

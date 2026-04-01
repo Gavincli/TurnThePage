@@ -242,6 +242,7 @@ const LogReading = () => {
     try {
       let bookId = null
       let bookTitle = ''
+      let newlyCompleted = []
 
       if (bookMode === 'existing' && selectedBookId) {
         bookId = selectedBookId
@@ -265,38 +266,26 @@ const LogReading = () => {
         }
       }
 
-      const { error: sessionErr } = await supabase.from('reading_sessions').insert({
-        user_id: userId,
-        book_id: bookId || null,
-        minutes_read: parseInt(minutes, 10),
-        pages_read: pages.trim() ? parseInt(pages, 10) : null,
-        session_date: sessionDate || getToday(),
-      })
+      const { data: rpcData, error: rpcErr } = await supabase.rpc(
+        'log_reading_session',
+        {
+          p_minutes_read: parseInt(minutes, 10),
+          p_session_date: sessionDate || null,
+          p_book_id: bookId || null,
+          p_pages_read: pages.trim() ? parseInt(pages, 10) : null,
+          p_finished_book: Boolean(finishedBook),
+        },
+      )
 
-      if (sessionErr) {
+      if (rpcErr) {
         setErrors({
           submit:
-            sessionErr.message ||
-            'Failed to log reading. Please try again.',
+            rpcErr.message || 'Failed to log reading. Please try again.',
         })
         return
       }
 
-      if (finishedBook && bookId) {
-        const { error: bookErr } = await supabase
-          .from('books')
-          .update({
-            is_finished: true,
-            finished_at: sessionDate || getToday(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('book_id', bookId)
-          .eq('user_id', userId)
-
-        if (bookErr) {
-          console.error(bookErr)
-        }
-      }
+      newlyCompleted = rpcData?.newlyCompleted ?? []
 
       await Promise.all([
         loadBooks(),
@@ -307,7 +296,7 @@ const LogReading = () => {
       setSubmitSuccess(true)
       setSuccessSummary({
         bookTitle,
-        newlyCompleted: [],
+        newlyCompleted,
       })
       setMinutes('')
       setPages('')
